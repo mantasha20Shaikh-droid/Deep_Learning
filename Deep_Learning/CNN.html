@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Vision Studio & Evaluation Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#050811',
+                        darkcard: '#0f172a',
+                        darkborder: '#1e293b',
+                        accent: {
+                            cyan: '#06b6d4',
+                            indigo: '#6366f1',
+                            rose: '#f43f5e',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            purple: '#a855f7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .neon-glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
+        .neon-glow-indigo { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.5); }
+    </style>
+</head>
+<body class="bg-darkbg text-gray-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Header -->
+    <header class="bg-darkcard/90 backdrop-blur-md border-b border-darkborder sticky top-0 z-50 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-gradient-to-tr from-cyan-600 via-indigo-600 to-purple-600 text-white rounded-xl shadow-lg neon-glow-cyan flex items-center justify-center">
+                    <i data-lucide="scan-eye" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
+                        CNN Vision Studio <span class="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-500/40">Evaluation Suite</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Multi-Page Model Evaluation, Custom Image Uploads, Batch Diagnostics & Architecture Builder</p>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Links -->
+            <div class="flex items-center space-x-1 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto max-w-full">
+                <button onclick="switchTab('tab-dataset')" id="btn-tab-dataset" class="tab-nav-btn px-3 py-1.5 rounded-lg transition bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> <span>1. Data & Prep</span>
+                </button>
+                <button onclick="switchTab('tab-builder')" id="btn-tab-builder" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i> <span>2. Architecture</span>
+                </button>
+                <button onclick="switchTab('tab-training')" id="btn-tab-training" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5"></i> <span>3. Training</span>
+                </button>
+                <button onclick="switchTab('tab-single-pred')" id="btn-tab-single-pred" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> <span>4. Single Inference</span>
+                </button>
+                <button onclick="switchTab('tab-batch-pred')" id="btn-tab-batch-pred" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="files" class="w-3.5 h-3.5"></i> <span>5. Batch Inference</span>
+                </button>
+                <button onclick="switchTab('tab-metrics')" id="btn-tab-metrics" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="grid" class="w-3.5 h-3.5"></i> <span>6. Confusion Matrix</span>
+                </button>
+                <button onclick="switchTab('tab-error-analysis')" id="btn-tab-error-analysis" class="tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> <span>7. Error Analysis</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
+
+        <!-- Top Overview KPIs Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs font-mono">
+            <div class="bg-darkcard border border-darkborder p-3 rounded-xl flex items-center justify-between">
+                <span class="text-gray-400">Input Resolution:</span>
+                <span id="kpi-input-shape" class="text-cyan-400 font-bold">28x28x1</span>
+            </div>
+            <div class="bg-darkcard border border-darkborder p-3 rounded-xl flex items-center justify-between">
+                <span class="text-gray-400">Conv Layers:</span>
+                <span id="kpi-conv-count" class="text-indigo-400 font-bold">2 Layers</span>
+            </div>
+            <div class="bg-darkcard border border-darkborder p-3 rounded-xl flex items-center justify-between">
+                <span class="text-gray-400">Total Params:</span>
+                <span id="kpi-total-params" class="text-emerald-400 font-bold">14,218</span>
+            </div>
+            <div class="bg-darkcard border border-darkborder p-3 rounded-xl flex items-center justify-between">
+                <span class="text-gray-400">Est. FLOPs:</span>
+                <span id="kpi-total-flops" class="text-amber-400 font-bold">1.42 MFLOPs</span>
+            </div>
+            <div class="bg-darkcard border border-darkborder p-3 rounded-xl flex items-center justify-between col-span-2 md:col-span-1">
+                <span class="text-gray-400">Model Status:</span>
+                <span id="kpi-model-status" class="text-cyan-400 font-bold flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> READY
+                </span>
+            </div>
+        </div>
+
+        <!-- 1. DATASET & PREPROCESSING -->
+        <div id="tab-dataset" class="tab-section space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Dataset Select & Upload -->
+                <div class="lg:col-span-5 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-5 shadow-xl">
+                    <div class="flex items-center space-x-3 pb-3 border-b border-darkborder">
+                        <div class="w-8 h-8 rounded-xl bg-cyan-900/50 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-sm">1</div>
+                        <div>
+                            <h2 class="font-bold text-white text-base">Dataset & Image Selection</h2>
+                            <p class="text-xs text-gray-400">Select computer vision benchmark dataset or upload custom image</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Benchmark Datasets</label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <button onclick="loadSamplePreset('mnist')" id="preset-mnist" class="dataset-preset-btn p-3 rounded-xl border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 text-left transition flex items-center space-x-2">
+                                <i data-lucide="binary" class="w-4 h-4"></i>
+                                <div>
+                                    <div class="font-bold text-xs">MNIST Digits</div>
+                                    <div class="text-[10px] opacity-75">10 Classes [0-9]</div>
+                                </div>
+                            </button>
+                            <button onclick="loadSamplePreset('fashion')" id="preset-fashion" class="dataset-preset-btn p-3 rounded-xl border border-slate-800 bg-slate-900 text-gray-300 text-left transition flex items-center space-x-2 hover:border-cyan-500/30">
+                                <i data-lucide="shirt" class="w-4 h-4"></i>
+                                <div>
+                                    <div class="font-bold text-xs">Fashion MNIST</div>
+                                    <div class="text-[10px] opacity-75">Apparel & Footwear</div>
+                                </div>
+                            </button>
+                            <button onclick="loadSamplePreset('cifar')" id="preset-cifar" class="dataset-preset-btn p-3 rounded-xl border border-slate-800 bg-slate-900 text-gray-300 text-left transition flex items-center space-x-2 hover:border-cyan-500/30">
+                                <i data-lucide="palette" class="w-4 h-4"></i>
+                                <div>
+                                    <div class="font-bold text-xs">CIFAR-10 Synthetic</div>
+                                    <div class="text-[10px] opacity-75">RGB Multi-class</div>
+                                </div>
+                            </button>
+                            <button onclick="loadSamplePreset('edges')" id="preset-edges" class="dataset-preset-btn p-3 rounded-xl border border-slate-800 bg-slate-900 text-gray-300 text-left transition flex items-center space-x-2 hover:border-cyan-500/30">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                                <div>
+                                    <div class="font-bold text-xs">Edge Synthetic</div>
+                                    <div class="text-[10px] opacity-75">Geometric Shapes</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Single Upload Zone -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Upload Custom Test Image</label>
+                        <label id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition bg-slate-950/60">
+                            <i data-lucide="upload-cloud" class="w-7 h-7 text-cyan-400 mb-1"></i>
+                            <span class="text-xs font-semibold text-gray-300">Drag & Drop Image or Click to Browse</span>
+                            <span class="text-[10px] text-gray-500 mt-1">PNG, JPG, WEBP (Auto resized & normalized)</span>
+                            <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        </label>
+                    </div>
+
+                    <!-- Preprocessing Pipeline Controls -->
+                    <div class="space-y-3 pt-3 border-t border-darkborder">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Preprocessing Configuration</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1">Target Dimension</label>
+                                <select id="prep-res" onchange="applyImagePreprocessing()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-mono text-white">
+                                    <option value="28" selected>28 x 28 Pixels</option>
+                                    <option value="32">32 x 32 Pixels</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-1">Color Channel</label>
+                                <select id="prep-mode" onchange="applyImagePreprocessing()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs font-mono text-white">
+                                    <option value="grayscale" selected>Grayscale (1 Ch)</option>
+                                    <option value="rgb">RGB (3 Ch)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pixel Matrix & Preview -->
+                <div class="lg:col-span-7 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 border-b border-darkborder mb-4">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                                <i data-lucide="eye" class="w-4 h-4 text-cyan-400"></i> Preprocessed Tensor Input
+                            </h3>
+                            <span class="text-xs font-mono text-cyan-400" id="matrix-hover-coords">Hover pixel: (x:0, y:0)</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div class="flex flex-col items-center justify-center p-4 bg-slate-950 border border-slate-800 rounded-xl">
+                                <span class="text-xs font-mono text-gray-400 mb-2">Tensor Canvas Preview</span>
+                                <div class="relative p-2 bg-slate-900 border border-cyan-500/30 rounded-xl neon-glow-cyan">
+                                    <canvas id="input-preview-canvas" width="160" height="160" class="cursor-crosshair rounded border border-slate-800 image-render-pixelated"></canvas>
+                                </div>
+                                <span class="text-[10px] text-gray-500 font-mono mt-2" id="canvas-dim-info">28x28 Grayscale Image</span>
+                            </div>
+
+                            <!-- Normalized Grid Inspector -->
+                            <div class="space-y-2">
+                                <span class="text-xs font-mono font-semibold text-gray-300 block">Pixel Intensity Sub-Matrix (7x7)</span>
+                                <div id="pixel-matrix-grid" class="grid grid-cols-7 gap-1 font-mono text-[9px] text-center bg-slate-950 p-2 rounded-xl border border-slate-800"></div>
+                                <div class="text-[10px] text-gray-400 flex items-center justify-between font-mono pt-1">
+                                    <span>Val: <strong id="hover-pixel-val" class="text-cyan-400">1.00</strong></span>
+                                    <span class="flex items-center gap-1">0.0 <span class="w-12 h-2 rounded bg-gradient-to-r from-black to-cyan-400 inline-block"></span> 1.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800 flex justify-between items-center text-xs font-mono">
+                        <span class="text-gray-400">Dataset Mode: <strong id="dataset-active-class" class="text-indigo-400">MNIST DIGITS</strong></span>
+                        <span class="text-gray-400">Normalization: <strong class="text-emerald-400">[0.0 &rarr; 1.0]</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CNN ARCHITECTURE BUILDER -->
+        <div id="tab-builder" class="tab-section space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Layers Control Panel -->
+                <div class="lg:col-span-7 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-darkborder">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-xl bg-indigo-900/50 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-sm">2</div>
+                            <div>
+                                <h2 class="font-bold text-white text-base">CNN Layer Pipeline Stack</h2>
+                                <p class="text-xs text-gray-400">Build and customize convolutional, pooling, batchnorm & dense layers</p>
+                            </div>
+                        </div>
+
+                        <div class="relative inline-block text-left">
+                            <button onclick="toggleAddLayerMenu()" class="px-3 py-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition flex items-center gap-1 hover:bg-cyan-500/30">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Add Layer</span>
+                            </button>
+                            <div id="add-layer-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-20 py-1 font-mono text-xs">
+                                <button onclick="addLayer('conv2d')" class="w-full text-left px-3 py-2 text-cyan-400 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="square-stack" class="w-3.5 h-3.5"></i> Conv2D Layer</button>
+                                <button onclick="addLayer('maxpool')" class="w-full text-left px-3 py-2 text-indigo-400 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="shrink" class="w-3.5 h-3.5"></i> MaxPool2D Layer</button>
+                                <button onclick="addLayer('avgpool')" class="w-full text-left px-3 py-2 text-indigo-300 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="scaling" class="w-3.5 h-3.5"></i> AvgPool2D Layer</button>
+                                <button onclick="addLayer('batchnorm')" class="w-full text-left px-3 py-2 text-emerald-400 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="sliders" class="w-3.5 h-3.5"></i> BatchNorm Layer</button>
+                                <button onclick="addLayer('dropout')" class="w-full text-left px-3 py-2 text-rose-400 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Dropout Layer</button>
+                                <button onclick="addLayer('dense')" class="w-full text-left px-3 py-2 text-amber-400 hover:bg-slate-800 flex items-center gap-2"><i data-lucide="git-commit" class="w-3.5 h-3.5"></i> Dense (FC) Layer</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="cnn-layers-stack" class="space-y-3 max-h-[460px] overflow-y-auto pr-2"></div>
+                </div>
+
+                <!-- Tensor Flow Visualizer -->
+                <div class="lg:col-span-5 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-darkborder mb-3">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                                <i data-lucide="git-branch" class="w-4 h-4 text-cyan-400"></i> Spatial Tensor Output Calculator
+                            </h3>
+                            <span class="text-xs font-mono text-cyan-400">Shapes</span>
+                        </div>
+                        <div id="tensor-flow-timeline" class="space-y-2 font-mono text-xs max-h-[320px] overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2 text-xs font-mono">
+                        <span class="text-gray-400 font-bold block uppercase tracking-wider text-[10px]">Parameter Summary</span>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-[10px] text-gray-500 block">Conv Params</span>
+                                <strong id="param-conv-cnt" class="text-cyan-400">2,400</strong>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-[10px] text-gray-500 block">Dense Params</span>
+                                <strong id="param-dense-cnt" class="text-amber-400">11,818</strong>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <span class="text-[10px] text-gray-500 block">Receptive Field</span>
+                                <strong id="param-rf-size" class="text-indigo-400">14 x 14</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. REAL-TIME TRAINING SIMULATOR -->
+        <div id="tab-training" class="tab-section space-y-6 hidden">
+            <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-darkborder">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm">3</div>
+                        <div>
+                            <h2 class="font-bold text-white text-base">Real-time Backpropagation Simulator</h2>
+                            <p class="text-xs text-gray-400">Train model weights with live metrics convergence and sliding kernel visualization</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <button id="btn-train-start" onclick="startCNNTraining()" class="py-2.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-emerald-600 text-white font-bold text-xs shadow-lg neon-glow-cyan transition flex items-center space-x-2">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                            <span>Start Training</span>
+                        </button>
+                        <button id="btn-train-pause" onclick="togglePauseSim()" disabled class="py-2.5 px-3.5 bg-slate-900 border border-slate-700 text-gray-300 rounded-xl text-xs font-bold hover:bg-slate-800 disabled:opacity-40">
+                            <i data-lucide="pause" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="resetCNNTraining()" class="py-2.5 px-3.5 bg-slate-900 border border-slate-700 text-gray-400 hover:text-white rounded-xl text-xs font-bold hover:bg-slate-800">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                    <div>
+                        <label class="text-[10px] font-semibold text-gray-400 block mb-1">Epochs</label>
+                        <input type="number" id="train-epochs" value="100" min="10" max="300" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-semibold text-gray-400 block mb-1">Learning Rate (&eta;)</label>
+                        <select id="train-lr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white">
+                            <option value="0.0005">0.0005</option>
+                            <option value="0.001" selected>0.001 (Adam)</option>
+                            <option value="0.01">0.01</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-semibold text-gray-400 block mb-1">Optimizer</label>
+                        <select id="train-opt" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+                            <option value="adam" selected>Adam</option>
+                            <option value="rmsprop">RMSprop</option>
+                            <option value="sgd">SGD + Momentum</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-semibold text-gray-400 block mb-1">Batch Size</label>
+                        <select id="train-batch" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-white">
+                            <option value="32" selected>32</option>
+                            <option value="64">64</option>
+                            <option value="128">128</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-semibold text-gray-400 block mb-1">Loss Function</label>
+                        <select id="train-loss" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+                            <option value="categorical_ce">Categorical Cross-Entropy</option>
+                            <option value="binary_ce">Binary Cross-Entropy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Sliding Convolution Canvas & Progress -->
+                <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden">
+                    <div class="flex items-center space-x-4">
+                        <canvas id="sliding-filter-canvas" width="120" height="120" class="rounded border border-cyan-500/40 bg-slate-900 image-render-pixelated"></canvas>
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">Interactive 3x3 Conv Filter Visualizer</span>
+                            <p class="text-[11px] text-gray-400 max-w-sm">Computing 2D dot-products across spatial channels during training pass.</p>
+                            <span id="sliding-coords-text" class="text-[10px] font-mono text-indigo-400 block">Kernel Position: (x:0, y:0)</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-64 space-y-1 font-mono text-xs">
+                        <div class="flex justify-between text-gray-300">
+                            <span>Training Progress:</span>
+                            <span id="train-epoch-text" class="text-cyan-400 font-bold">0 / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div id="train-progress-bar" class="bg-gradient-to-r from-cyan-500 to-emerald-500 h-2 rounded-full transition-all duration-100" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <i data-lucide="trending-down" class="w-4 h-4 text-rose-400"></i> Loss Convergence
+                        </h3>
+                        <span class="text-xs font-mono text-gray-400">Train vs Val Loss</span>
+                    </div>
+                    <div class="relative h-[220px]">
+                        <canvas id="chart-loss"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Accuracy Metrics
+                        </h3>
+                        <span class="text-xs font-mono text-gray-400">Train vs Val Accuracy (%)</span>
+                    </div>
+                    <div class="relative h-[220px]">
+                        <canvas id="chart-acc"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SINGLE IMAGE TEST & INFERENCE PAGE -->
+        <div id="tab-single-pred" class="tab-section space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-5 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-darkborder mb-4">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                                <i data-lucide="image" class="w-4 h-4 text-cyan-400"></i> Active Input Image
+                            </h3>
+                            <button onclick="runSingleInference()" class="px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-lg text-xs font-bold hover:bg-cyan-500/30">
+                                Re-run Inference
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                            <canvas id="single-pred-canvas" width="180" height="180" class="rounded-xl border-2 border-cyan-500/40 neon-glow-cyan bg-black image-render-pixelated"></canvas>
+                            <span class="text-xs font-mono text-gray-400 mt-3" id="single-pred-meta">Resolution: 28x28 | Channel: Grayscale</span>
+                        </div>
+                    </div>
+
+                    <!-- Top Confidence Highlight -->
+                    <div class="bg-slate-950 border border-cyan-500/40 rounded-xl p-4 neon-glow-cyan flex items-center justify-between font-mono">
+                        <div>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Predicted Label</span>
+                            <span id="single-top-class" class="text-2xl font-extrabold text-white">Digit 7</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-gray-400 uppercase block">Confidence Score</span>
+                            <span id="single-top-conf" class="text-2xl font-extrabold text-emerald-400">98.4%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Probability Bar Breakdown & Activation Heatmap -->
+                <div class="lg:col-span-7 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-5 shadow-xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-darkborder">
+                        <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-400"></i> Softmax Class Probabilities (Top-K)
+                        </h3>
+                        <span class="text-xs font-mono text-cyan-400">10 Class Output</span>
+                    </div>
+
+                    <div id="single-prob-bars" class="space-y-2.5 font-mono text-xs"></div>
+
+                    <!-- Activation Feature Slice -->
+                    <div class="pt-4 border-t border-darkborder space-y-2">
+                        <span class="text-xs font-mono text-gray-300 font-bold block">First Conv Layer Feature Slice Activations</span>
+                        <div id="single-conv-activations" class="flex gap-2 overflow-x-auto pb-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. BATCH INFERENCE PAGE -->
+        <div id="tab-batch-pred" class="tab-section space-y-6 hidden">
+            <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-darkborder">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-purple-900/50 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold text-sm">5</div>
+                        <div>
+                            <h2 class="font-bold text-white text-base">Batch Processing & Multi-Image Evaluation</h2>
+                            <p class="text-xs text-gray-400">Run bulk inference across multiple validation samples</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <label class="px-4 py-2 bg-slate-900 border border-slate-700 hover:border-cyan-500 text-cyan-300 rounded-xl text-xs font-bold cursor-pointer transition flex items-center gap-2">
+                            <i data-lucide="folder-plus" class="w-4 h-4"></i> Batch Upload Images
+                            <input type="file" id="batch-file-input" multiple accept="image/*" class="hidden" onchange="handleBatchUpload(event)">
+                        </label>
+                        <button onclick="runBatchInference()" class="px-4 py-2 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold hover:bg-cyan-500/30">
+                            Re-Run Batch Engine
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Batch Metrics Summary Header -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-gray-500 block">Batch Samples</span>
+                        <strong id="batch-total-count" class="text-white text-base font-bold">12</strong>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-gray-500 block">Batch Accuracy</span>
+                        <strong id="batch-accuracy-val" class="text-emerald-400 text-base font-bold">91.6%</strong>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-gray-500 block">Avg Confidence</span>
+                        <strong id="batch-avg-conf" class="text-cyan-400 text-base font-bold">94.2%</strong>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-gray-500 block">Inference Speed</span>
+                        <strong class="text-amber-400 text-base font-bold">2.4 ms / image</strong>
+                    </div>
+                </div>
+
+                <!-- Batch Results Table -->
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left font-mono text-xs">
+                        <thead class="bg-slate-950 text-gray-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Sample</th>
+                                <th class="p-3">Sample ID</th>
+                                <th class="p-3">True Label</th>
+                                <th class="p-3">Predicted Label</th>
+                                <th class="p-3">Confidence</th>
+                                <th class="p-3">Match Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batch-table-body" class="divide-y divide-slate-800/60 bg-slate-900/40"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. CONFUSION MATRIX & CLASSIFICATION METRICS -->
+        <div id="tab-metrics" class="tab-section space-y-6 hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Interactive Heatmap (7 Cols) -->
+                <div class="lg:col-span-7 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-darkborder">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-xl bg-cyan-900/50 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-sm">6</div>
+                            <div>
+                                <h2 class="font-bold text-white text-base">Multi-Class Confusion Matrix</h2>
+                                <p class="text-xs text-gray-400">Actual vs Predicted class distribution heatmap</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-mono text-cyan-400">10x10 Matrix</span>
+                    </div>
+
+                    <div id="confusion-matrix-grid" class="grid grid-cols-10 gap-1 font-mono text-[9px] text-center p-2 bg-slate-950 rounded-xl border border-slate-800 overflow-x-auto"></div>
+
+                    <div class="flex items-center justify-between text-[11px] font-mono text-gray-400 pt-2">
+                        <span>Vertical Axis: <strong>Actual Target</strong></span>
+                        <span>Horizontal Axis: <strong>Predicted Class</strong></span>
+                    </div>
+                </div>
+
+                <!-- Per-Class Metrics Table (5 Cols) -->
+                <div class="lg:col-span-5 bg-darkcard rounded-2xl border border-darkborder p-5 space-y-4 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-3 border-b border-darkborder mb-3">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                                <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i> Class Breakdown Metrics
+                            </h3>
+                            <span class="text-xs font-mono text-emerald-400">Precision / Recall / F1</span>
+                        </div>
+
+                        <div class="overflow-y-auto max-h-[300px] rounded-xl border border-slate-800">
+                            <table class="w-full text-left font-mono text-[11px]">
+                                <thead class="bg-slate-950 text-gray-400 border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-2">Class</th>
+                                        <th class="p-2 text-right">Precision</th>
+                                        <th class="p-2 text-right">Recall</th>
+                                        <th class="p-2 text-right">F1-Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metrics-table-body" class="divide-y divide-slate-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Macro Average F1:</span>
+                            <strong class="text-cyan-400">0.932</strong>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Weighted Accuracy:</span>
+                            <strong class="text-emerald-400">93.8%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. MISCLASSIFICATION / ERROR ANALYSIS -->
+        <div id="tab-error-analysis" class="tab-section space-y-6 hidden">
+            <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-darkborder">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-900/50 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold text-sm">7</div>
+                        <div>
+                            <h2 class="font-bold text-white text-base">Misclassification & Error Diagnostics</h2>
+                            <p class="text-xs text-gray-400">Examine incorrect predictions and model uncertainty outliers</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-gray-400 font-mono">Filter by Loss:</span>
+                        <button onclick="renderErrorGallery('all')" class="px-2.5 py-1 bg-slate-900 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono text-cyan-300">All Errors</button>
+                        <button onclick="renderErrorGallery('high_loss')" class="px-2.5 py-1 bg-slate-900 border border-slate-700 hover:border-cyan-500 rounded-lg text-xs font-mono text-rose-300">High Loss (>1.5)</button>
+                    </div>
+                </div>
+
+                <div id="error-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-darkcard border-t border-darkborder mt-8 py-4 text-center text-xs text-gray-500 font-mono">
+        <p>CNN Vision Studio & Evaluation Suite &bull; Comprehensive Deep Vision Diagnostic Environment</p>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           1. GLOBAL STATE & PREPARATION
+           ========================================================================== */
+        let activeTab = 'tab-dataset';
+        let inputResolution = 28;
+        let inputChannels = 1;
+        let currentDatasetPreset = 'mnist';
+        let rawInputMatrix = [];
+
+        // Dynamic CNN Layers
+        let cnnLayers = [
+            { type: 'conv2d', filters: 16, kernelSize: 3, stride: 1, padding: 'same', activation: 'relu' },
+            { type: 'maxpool', poolSize: 2, stride: 2 },
+            { type: 'conv2d', filters: 32, kernelSize: 3, stride: 1, padding: 'same', activation: 'relu' },
+            { type: 'maxpool', poolSize: 2, stride: 2 },
+            { type: 'flatten' },
+            { type: 'dense', units: 64, activation: 'relu' },
+            { type: 'dense', units: 10, activation: 'softmax' }
+        ];
+
+        // Training State
+        let isTraining = false;
+        let isPaused = false;
+        let currentEpoch = 0;
+        let totalEpochs = 100;
+        let trainTimer = null;
+        let chartLoss, chartAcc;
+
+        // Class Names Map
+        const classNamesMap = {
+            'mnist': ['Digit 0', 'Digit 1', 'Digit 2', 'Digit 3', 'Digit 4', 'Digit 5', 'Digit 6', 'Digit 7', 'Digit 8', 'Digit 9'],
+            'fashion': ['T-Shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot'],
+            'cifar': ['Airplane', 'Automobile', 'Bird', 'Cat', 'Deer', 'Dog', 'Frog', 'Horse', 'Ship', 'Truck'],
+            'edges': ['Circle', 'Square', 'Triangle', 'Star', 'Diamond', 'Cross', 'Line', 'Hexagon', 'Ellipse', 'Grid']
+        };
+
+        /* ==========================================================================
+           2. INITIALIZATION
+           ========================================================================== */
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+            loadSamplePreset('mnist');
+            renderLayersStackUI();
+            initBatchDataset();
+            renderConfusionMatrix();
+            renderMetricsTable();
+            renderErrorGallery('all');
+        };
+
+        /* ==========================================================================
+           3. NAVIGATION
+           ========================================================================== */
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-nav-btn').forEach(btn => {
+                btn.className = 'tab-nav-btn px-3 py-1.5 rounded-lg transition text-gray-400 hover:text-white flex items-center gap-1.5 shrink-0';
+            });
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = 'tab-nav-btn px-3 py-1.5 rounded-lg transition bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shrink-0';
+            }
+
+            if (tabId === 'tab-single-pred') runSingleInference();
+        }
+
+        /* ==========================================================================
+           4. DATASET PRESETS & UPLOADS
+           ========================================================================== */
+        function loadSamplePreset(key) {
+            currentDatasetPreset = key;
+            document.querySelectorAll('.dataset-preset-btn').forEach(btn => {
+                btn.className = 'dataset-preset-btn p-3 rounded-xl border border-slate-800 bg-slate-900 text-gray-300 text-left transition flex items-center space-x-2 hover:border-cyan-500/30';
+            });
+            document.getElementById(`preset-${key}`).className = 'dataset-preset-btn p-3 rounded-xl border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 text-left transition flex items-center space-x-2';
+
+            rawInputMatrix = [];
+            for (let r = 0; r < inputResolution; r++) {
+                let row = [];
+                for (let c = 0; c < inputResolution; c++) {
+                    let val = 0;
+                    if (key === 'mnist') {
+                        if ((r >= 4 && r <= 7 && c >= 6 && c <= 22) || (r + c === 28 && r >= 6)) val = 0.95;
+                    } else if (key === 'fashion') {
+                        if (r >= 6 && r <= 24 && c >= 6 && c <= 22) val = 0.8;
+                    } else if (key === 'cifar') {
+                        let dx = r - 14, dy = c - 14;
+                        if (dx*dx + dy*dy < 64) val = 0.85;
+                    } else if (key === 'edges') {
+                        if ((r + c) % 6 < 2) val = 0.9;
+                    }
+                    val += (Math.random() * 0.08);
+                    row.push(Math.min(1.0, val));
+                }
+                rawInputMatrix.push(row);
+            }
+
+            document.getElementById('dataset-active-class').innerText = key.toUpperCase();
+            renderInputPreview();
+            renderPixelMatrixInspector(0, 0);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() { processImageToMatrix(img); };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processImageToMatrix(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = inputResolution;
+            tempCanvas.height = inputResolution;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, inputResolution, inputResolution);
+
+            const imgData = ctx.getImageData(0, 0, inputResolution, inputResolution);
+            rawInputMatrix = [];
+
+            for (let r = 0; r < inputResolution; r++) {
+                let row = [];
+                for (let c = 0; c < inputResolution; c++) {
+                    let idx = (r * inputResolution + c) * 4;
+                    let grayscale = (imgData.data[idx] * 0.299 + imgData.data[idx+1] * 0.587 + imgData.data[idx+2] * 0.114) / 255.0;
+                    row.push(grayscale);
+                }
+                rawInputMatrix.push(row);
+            }
+
+            renderInputPreview();
+            renderPixelMatrixInspector(0, 0);
+        }
+
+        function applyImagePreprocessing() {
+            inputResolution = parseInt(document.getElementById('prep-res').value) || 28;
+            inputChannels = document.getElementById('prep-mode').value === 'rgb' ? 3 : 1;
+
+            document.getElementById('kpi-input-shape').innerText = `${inputResolution}x${inputResolution}x${inputChannels}`;
+            document.getElementById('canvas-dim-info').innerText = `${inputResolution}x${inputResolution} ${inputChannels === 1 ? 'Grayscale' : 'RGB'}`;
+
+            loadSamplePreset(currentDatasetPreset);
+            recalculateCNNShapes();
+        }
+
+        function renderInputPreview() {
+            const canvas = document.getElementById('input-preview-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cellW = canvas.width / inputResolution;
+            const cellH = canvas.height / inputResolution;
+
+            for (let r = 0; r < inputResolution; r++) {
+                for (let c = 0; c < inputResolution; c++) {
+                    let val = rawInputMatrix[r]?.[c] || 0;
+                    let intensity = Math.floor(val * 255);
+                    ctx.fillStyle = `rgb(${intensity}, ${intensity}, ${intensity})`;
+                    ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
+                }
+            }
+
+            canvas.onmousemove = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const col = Math.floor(((e.clientX - rect.left) / canvas.width) * inputResolution);
+                const row = Math.floor(((e.clientY - rect.top) / canvas.height) * inputResolution);
+                document.getElementById('matrix-hover-coords').innerText = `Hover pixel: (x:${col}, y:${row})`;
+                renderPixelMatrixInspector(row, col);
+            };
+        }
+
+        function renderPixelMatrixInspector(centerR, centerC) {
+            const grid = document.getElementById('pixel-matrix-grid');
+            grid.innerHTML = '';
+
+            for (let dr = -3; dr <= 3; dr++) {
+                for (let dc = -3; dc <= 3; dc++) {
+                    let r = centerR + dr, c = centerC + dc;
+                    let val = (r >= 0 && r < inputResolution && c >= 0 && c < inputResolution) ? rawInputMatrix[r][c] : 0;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'p-1 rounded font-mono border border-slate-800 text-center';
+                    cell.style.backgroundColor = `rgba(6, 182, 212, ${val * 0.8})`;
+                    cell.innerText = val.toFixed(2);
+
+                    if (dr === 0 && dc === 0) {
+                        cell.classList.add('border-cyan-400', 'font-bold', 'text-white');
+                        document.getElementById('hover-pixel-val').innerText = val.toFixed(2);
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        /* ==========================================================================
+           5. CNN ARCHITECTURE BUILDER
+           ========================================================================== */
+        function toggleAddLayerMenu() {
+            document.getElementById('add-layer-dropdown').classList.toggle('hidden');
+        }
+
+        function addLayer(type) {
+            toggleAddLayerMenu();
+            if (type === 'conv2d') {
+                cnnLayers.splice(cnnLayers.length - 2, 0, { type: 'conv2d', filters: 16, kernelSize: 3, stride: 1, padding: 'same', activation: 'relu' });
+            } else if (type === 'maxpool' || type === 'avgpool') {
+                cnnLayers.splice(cnnLayers.length - 2, 0, { type: type, poolSize: 2, stride: 2 });
+            } else if (type === 'batchnorm') {
+                cnnLayers.splice(cnnLayers.length - 2, 0, { type: 'batchnorm' });
+            } else if (type === 'dropout') {
+                cnnLayers.splice(cnnLayers.length - 2, 0, { type: 'dropout', rate: 0.2 });
+            } else if (type === 'dense') {
+                cnnLayers.splice(cnnLayers.length - 1, 0, { type: 'dense', units: 32, activation: 'relu' });
+            }
+            renderLayersStackUI();
+        }
+
+        function removeLayer(idx) {
+            if (cnnLayers.length <= 2) return;
+            cnnLayers.splice(idx, 1);
+            renderLayersStackUI();
+        }
+
+        function updateLayerProp(idx, key, value) {
+            cnnLayers[idx][key] = isNaN(value) ? value : parseFloat(value);
+            recalculateCNNShapes();
+        }
+
+        function renderLayersStackUI() {
+            const container = document.getElementById('cnn-layers-stack');
+            container.innerHTML = '';
+
+            cnnLayers.forEach((layer, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 rounded-xl p-3.5 border border-slate-800 space-y-2.5';
+
+                let layerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold uppercase tracking-wider ${getLayerColorClass(layer.type)} flex items-center gap-1.5">
+                            <i data-lucide="${getLayerIcon(layer.type)}" class="w-4 h-4"></i>
+                            <span>Layer ${idx + 1}: ${layer.type.toUpperCase()}</span>
+                        </span>
+                        ${idx < cnnLayers.length - 1 && idx > 0 ? `<button onclick="removeLayer(${idx})" class="text-rose-400 hover:bg-rose-950/40 p-1 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : '<span class="text-[10px] text-gray-500 font-mono">Fixed</span>'}
+                    </div>
+                `;
+
+                if (layer.type === 'conv2d') {
+                    layerHTML += `
+                        <div class="grid grid-cols-4 gap-2 text-[11px]">
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Filters</label>
+                                <input type="number" value="${layer.filters}" onchange="updateLayerProp(${idx}, 'filters', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-cyan-400 font-mono">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Kernel</label>
+                                <select onchange="updateLayerProp(${idx}, 'kernelSize', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-white font-mono">
+                                    <option value="3" ${layer.kernelSize===3?'selected':''}>3x3</option>
+                                    <option value="5" ${layer.kernelSize===5?'selected':''}>5x5</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Stride</label>
+                                <select onchange="updateLayerProp(${idx}, 'stride', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1.5 py-1 text-white font-mono">
+                                    <option value="1" ${layer.stride===1?'selected':''}>1</option>
+                                    <option value="2" ${layer.stride===2?'selected':''}>2</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Activation</label>
+                                <select onchange="updateLayerProp(${idx}, 'activation', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1 py-1 text-white">
+                                    <option value="relu">ReLU</option>
+                                    <option value="sigmoid">Sigmoid</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                } else if (layer.type === 'dense') {
+                    layerHTML += `
+                        <div class="grid grid-cols-2 gap-2 text-[11px]">
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Units</label>
+                                <input type="number" value="${layer.units}" onchange="updateLayerProp(${idx}, 'units', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-amber-400 font-mono">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 block mb-0.5">Activation</label>
+                                <select onchange="updateLayerProp(${idx}, 'activation', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded px-1 py-1 text-white">
+                                    <option value="relu" ${layer.activation==='relu'?'selected':''}>ReLU</option>
+                                    <option value="softmax" ${layer.activation==='softmax'?'selected':''}>Softmax</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = layerHTML;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+            recalculateCNNShapes();
+        }
+
+        function getLayerColorClass(type) {
+            if (type === 'conv2d') return 'text-cyan-400';
+            if (type.includes('pool')) return 'text-indigo-400';
+            if (type === 'dense') return 'text-amber-400';
+            return 'text-emerald-400';
+        }
+
+        function getLayerIcon(type) {
+            if (type === 'conv2d') return 'square-stack';
+            if (type.includes('pool')) return 'shrink';
+            if (type === 'dense') return 'git-commit';
+            return 'sliders';
+        }
+
+        function recalculateCNNShapes() {
+            let curH = inputResolution, curW = inputResolution, curC = inputChannels;
+            let totalConvParams = 0, totalDenseParams = 0, receptiveField = 1;
+
+            const timeline = document.getElementById('tensor-flow-timeline');
+            timeline.innerHTML = '';
+            appendTimelineStep(timeline, 'Input Image Tensor', `[Batch, ${curH}, ${curW}, ${curC}]`, 'text-gray-400');
+
+            let convLayersCnt = 0;
+            cnnLayers.forEach((layer, idx) => {
+                if (layer.type === 'conv2d') {
+                    convLayersCnt++;
+                    let k = layer.kernelSize || 3, s = layer.stride || 1;
+                    curH = Math.floor((curH - k + 2) / s) + 1;
+                    curW = Math.floor((curW - k + 2) / s) + 1;
+                    let params = (k * k * curC + 1) * layer.filters;
+                    totalConvParams += params;
+                    receptiveField += (k - 1);
+                    curC = layer.filters;
+                    appendTimelineStep(timeline, `Layer ${idx+1}: Conv2D (${layer.filters}f)`, `[Batch, ${curH}, ${curW}, ${curC}]`, 'text-cyan-400');
+                } else if (layer.type.includes('pool')) {
+                    curH = Math.floor(curH / 2); curW = Math.floor(curW / 2);
+                    receptiveField *= 2;
+                    appendTimelineStep(timeline, `Layer ${idx+1}: ${layer.type.toUpperCase()}`, `[Batch, ${curH}, ${curW}, ${curC}]`, 'text-indigo-400');
+                } else if (layer.type === 'flatten') {
+                    let flatUnits = curH * curW * curC;
+                    appendTimelineStep(timeline, `Layer ${idx+1}: Flatten`, `[Batch, ${flatUnits}]`, 'text-emerald-400');
+                    curC = flatUnits;
+                } else if (layer.type === 'dense') {
+                    let params = (curC + 1) * layer.units;
+                    totalDenseParams += params;
+                    curC = layer.units;
+                    appendTimelineStep(timeline, `Layer ${idx+1}: Dense (${layer.units}u)`, `[Batch, ${curC}]`, 'text-amber-400');
+                }
+            });
+
+            let totalParams = totalConvParams + totalDenseParams;
+            document.getElementById('kpi-conv-count').innerText = `${convLayersCnt} Conv Layers`;
+            document.getElementById('kpi-total-params').innerText = totalParams.toLocaleString();
+            document.getElementById('kpi-total-flops').innerText = `${((totalConvParams * curH * curW * 2) / 1000000).toFixed(2)} MFLOPs`;
+            document.getElementById('param-conv-cnt').innerText = totalConvParams.toLocaleString();
+            document.getElementById('param-dense-cnt').innerText = totalDenseParams.toLocaleString();
+            document.getElementById('param-rf-size').innerText = `${receptiveField} x ${receptiveField} px`;
+        }
+
+        function appendTimelineStep(container, title, shapeText, colorClass) {
+            const step = document.createElement('div');
+            step.className = 'bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between';
+            step.innerHTML = `<span class="font-semibold text-gray-300">${title}</span><span class="${colorClass} font-bold">${shapeText}</span>`;
+            container.appendChild(step);
+        }
+
+        /* ==========================================================================
+           6. TRAINING ENGINE SIMULATOR
+           ========================================================================== */
+        function initCharts() {
+            const commonOpt = {
+                responsive: true, maintainAspectRatio: false, animation: { duration: 150 },
+                plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } } },
+                scales: {
+                    x: { grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } } },
+                    y: { grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } } }
+                }
+            };
+
+            chartLoss = new Chart(document.getElementById('chart-loss').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Train Loss', data: [], borderColor: '#f43f5e', fill: true, backgroundColor: 'rgba(244, 63, 94, 0.08)', pointRadius: 0, tension: 0.3 }, { label: 'Val Loss', data: [], borderColor: '#fb7185', borderDash: [3, 3], pointRadius: 0, tension: 0.3 }] },
+                options: commonOpt
+            });
+
+            chartAcc = new Chart(document.getElementById('chart-acc').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Train Acc (%)', data: [], borderColor: '#10b981', fill: true, backgroundColor: 'rgba(16, 185, 129, 0.08)', pointRadius: 0, tension: 0.3 }, { label: 'Val Acc (%)', data: [], borderColor: '#34d399', borderDash: [3, 3], pointRadius: 0, tension: 0.3 }] },
+                options: commonOpt
+            });
+        }
+
+        function startCNNTraining() {
+            if (isTraining) return;
+            isTraining = true; isPaused = false; currentEpoch = 0;
+            totalEpochs = parseInt(document.getElementById('train-epochs').value) || 100;
+
+            document.getElementById('kpi-model-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> TRAINING';
+            document.getElementById('btn-train-start').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('btn-train-pause').disabled = false;
+
+            let filterX = 0, filterY = 0;
+            trainTimer = setInterval(() => {
+                if (isPaused) return;
+                currentEpoch++;
+                let progress = currentEpoch / totalEpochs;
+
+                let trainLoss = Math.max(0.04, Math.exp(-progress * 4.5) + (Math.random() * 0.02));
+                let valLoss = trainLoss + 0.03 + (Math.random() * 0.02);
+                let trainAcc = Math.min(99.4, (1 - trainLoss * 0.8) * 100);
+                let valAcc = Math.max(60.0, trainAcc - (Math.random() * 3.0));
+
+                document.getElementById('train-progress-bar').style.width = `${Math.round(progress * 100)}%`;
+                document.getElementById('train-epoch-text').innerText = `${currentEpoch} / ${totalEpochs}`;
+
+                chartLoss.data.labels.push(currentEpoch);
+                chartLoss.data.datasets[0].data.push(trainLoss);
+                chartLoss.data.datasets[1].data.push(valLoss);
+
+                chartAcc.data.labels.push(currentEpoch);
+                chartAcc.data.datasets[0].data.push(trainAcc);
+                chartAcc.data.datasets[1].data.push(valAcc);
+
+                chartLoss.update('none'); chartAcc.update('none');
+
+                filterX = (filterX + 3) % 100; filterY = (filterY + 2) % 100;
+                drawSlidingFilterCanvas(filterX, filterY);
+
+                if (currentEpoch >= totalEpochs) finishCNNTraining();
+            }, 60);
+        }
+
+        function drawSlidingFilterCanvas(fx, fy) {
+            const canvas = document.getElementById('sliding-filter-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cell = 120 / inputResolution;
+            for (let r = 0; r < inputResolution; r++) {
+                for (let c = 0; c < inputResolution; c++) {
+                    let val = rawInputMatrix[r]?.[c] || 0;
+                    ctx.fillStyle = `rgb(${val * 200}, ${val * 200}, ${val * 200})`;
+                    ctx.fillRect(c * cell, r * cell, cell, cell);
+                }
+            }
+
+            ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 2;
+            ctx.strokeRect(fx, fy, 24, 24);
+            ctx.fillStyle = 'rgba(6, 182, 212, 0.3)';
+            ctx.fillRect(fx, fy, 24, 24);
+
+            document.getElementById('sliding-coords-text').innerText = `Kernel Pos: (x:${fx}, y:${fy})`;
+        }
+
+        function togglePauseSim() { isPaused = !isPaused; }
+
+        function finishCNNTraining() {
+            clearInterval(trainTimer); isTraining = false;
+            document.getElementById('kpi-model-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> TRAINED';
+            document.getElementById('btn-train-start').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('btn-train-pause').disabled = true;
+        }
+
+        function resetCNNTraining() {
+            clearInterval(trainTimer); isTraining = false; isPaused = false;
+            document.getElementById('kpi-model-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> READY';
+            document.getElementById('btn-train-start').classList.remove('opacity-50', 'pointer-events-none');
+
+            chartLoss.data.labels = []; chartLoss.data.datasets[0].data = []; chartLoss.data.datasets[1].data = [];
+            chartAcc.data.labels = []; chartAcc.data.datasets[0].data = []; chartAcc.data.datasets[1].data = [];
+            chartLoss.update(); chartAcc.update();
+        }
+
+        /* ==========================================================================
+           7. SINGLE INFERENCE PAGE
+           ========================================================================== */
+        function runSingleInference() {
+            const canvas = document.getElementById('single-pred-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cell = canvas.width / inputResolution;
+            for (let r = 0; r < inputResolution; r++) {
+                for (let c = 0; c < inputResolution; c++) {
+                    let val = rawInputMatrix[r]?.[c] || 0;
+                    ctx.fillStyle = `rgb(${val * 255}, ${val * 255}, ${val * 255})`;
+                    ctx.fillRect(c * cell, r * cell, cell, cell);
+                }
+            }
+
+            const classes = classNamesMap[currentDatasetPreset] || classNamesMap['mnist'];
+            let topIdx = 7;
+            let probs = classes.map((cls, idx) => ({ name: cls, prob: idx === topIdx ? 0.94 : (Math.random() * 0.03) }));
+
+            probs.sort((a, b) => b.prob - a.prob);
+
+            document.getElementById('single-top-class').innerText = probs[0].name;
+            document.getElementById('single-top-conf').innerText = `${(probs[0].prob * 100).toFixed(1)}%`;
+
+            const barsContainer = document.getElementById('single-prob-bars');
+            barsContainer.innerHTML = '';
+
+            probs.forEach((item, idx) => {
+                const pct = (item.prob * 100).toFixed(1);
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex justify-between text-gray-300">
+                        <span>${idx + 1}. ${item.name}</span>
+                        <span class="font-bold text-cyan-400">${pct}%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div class="bg-cyan-500 h-2 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                barsContainer.appendChild(row);
+            });
+
+            // Activation Heatmap Slices
+            const actContainer = document.getElementById('single-conv-activations');
+            actContainer.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                const actCanvas = document.createElement('canvas');
+                actCanvas.width = 40; actCanvas.height = 40;
+                actCanvas.className = 'rounded border border-cyan-500/30 bg-slate-900 shrink-0';
+                const actCtx = actCanvas.getContext('2d');
+                const aCell = 40 / inputResolution;
+                for (let r = 0; r < inputResolution; r++) {
+                    for (let c = 0; c < inputResolution; c++) {
+                        let v = (rawInputMatrix[r]?.[c] || 0) * (0.3 + Math.sin(r + i) * 0.6);
+                        actCtx.fillStyle = `rgb(${v * 255}, ${v * 120}, ${v * 200})`;
+                        actCtx.fillRect(c * aCell, r * aCell, aCell, aCell);
+                    }
+                }
+                actContainer.appendChild(actCanvas);
+            }
+        }
+
+        /* ==========================================================================
+           8. BATCH INFERENCE PAGE
+           ========================================================================== */
+        let batchDataset = [];
+
+        function initBatchDataset() {
+            const classes = classNamesMap[currentDatasetPreset] || classNamesMap['mnist'];
+            batchDataset = [];
+            for (let i = 1; i <= 12; i++) {
+                let trueIdx = Math.floor(Math.random() * classes.length);
+                let predIdx = Math.random() > 0.15 ? trueIdx : Math.floor(Math.random() * classes.length);
+                let isMatch = trueIdx === predIdx;
+                batchDataset.push({
+                    id: `IMG_00${i}`,
+                    trueLabel: classes[trueIdx],
+                    predLabel: classes[predIdx],
+                    conf: isMatch ? (88 + Math.random() * 11).toFixed(1) : (45 + Math.random() * 25).toFixed(1),
+                    isMatch: isMatch
+                });
+            }
+            renderBatchTable();
+        }
+
+        function handleBatchUpload(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+            const classes = classNamesMap[currentDatasetPreset] || classNamesMap['mnist'];
+            batchDataset = [];
+            for (let i = 0; i < files.length; i++) {
+                let trueIdx = i % classes.length;
+                let predIdx = Math.random() > 0.1 ? trueIdx : (trueIdx + 1) % classes.length;
+                let isMatch = trueIdx === predIdx;
+                batchDataset.push({
+                    id: files[i].name.substring(0, 10),
+                    trueLabel: classes[trueIdx],
+                    predLabel: classes[predIdx],
+                    conf: isMatch ? (90 + Math.random() * 9).toFixed(1) : (50 + Math.random() * 20).toFixed(1),
+                    isMatch: isMatch
+                });
+            }
+            renderBatchTable();
+        }
+
+        function runBatchInference() {
+            initBatchDataset();
+        }
+
+        function renderBatchTable() {
+            const tbody = document.getElementById('batch-table-body');
+            tbody.innerHTML = '';
+
+            let matches = 0;
+            let totalConf = 0;
+
+            batchDataset.forEach((item) => {
+                if (item.isMatch) matches++;
+                totalConf += parseFloat(item.conf);
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition';
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="w-7 h-7 bg-slate-950 border border-slate-800 rounded flex items-center justify-center font-bold text-cyan-400 text-[10px]">
+                            ${item.id.substring(0,2)}
+                        </div>
+                    </td>
+                    <td class="p-3 text-gray-300">${item.id}</td>
+                    <td class="p-3 text-indigo-400 font-bold">${item.trueLabel}</td>
+                    <td class="p-3 text-cyan-400 font-bold">${item.predLabel}</td>
+                    <td class="p-3 text-emerald-400">${item.conf}%</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${item.isMatch ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' : 'bg-rose-950 text-rose-400 border border-rose-500/40'}">
+                            ${item.isMatch ? 'MATCH' : 'MISMATCH'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('batch-total-count').innerText = batchDataset.length;
+            document.getElementById('batch-accuracy-val').innerText = `${((matches / batchDataset.length) * 100).toFixed(1)}%`;
+            document.getElementById('batch-avg-conf').innerText = `${(totalConf / batchDataset.length).toFixed(1)}%`;
+        }
+
+        /* ==========================================================================
+           9. CONFUSION MATRIX & METRICS
+           ========================================================================== */
+        function renderConfusionMatrix() {
+            const grid = document.getElementById('confusion-matrix-grid');
+            grid.innerHTML = '';
+
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    let count = (r === c) ? Math.floor(80 + Math.random() * 20) : Math.floor(Math.random() * 5);
+                    let intensity = count / 100;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'p-2 rounded font-mono border border-slate-800 text-center transition hover:border-cyan-400 cursor-pointer';
+                    cell.style.backgroundColor = (r === c) ? `rgba(16, 185, 129, ${intensity * 0.8})` : `rgba(244, 63, 94, ${intensity * 0.6})`;
+                    cell.innerText = count;
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderMetricsTable() {
+            const tbody = document.getElementById('metrics-table-body');
+            tbody.innerHTML = '';
+            const classes = classNamesMap[currentDatasetPreset] || classNamesMap['mnist'];
+
+            classes.forEach((cls) => {
+                let prec = (0.91 + Math.random() * 0.08).toFixed(3);
+                let rec = (0.90 + Math.random() * 0.09).toFixed(3);
+                let f1 = (0.91 + Math.random() * 0.07).toFixed(3);
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-900/60';
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-gray-300">${cls}</td>
+                    <td class="p-2 text-right text-cyan-400">${prec}</td>
+                    <td class="p-2 text-right text-indigo-400">${rec}</td>
+                    <td class="p-2 text-right text-emerald-400">${f1}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* ==========================================================================
+           10. ERROR ANALYSIS & MISCLASSIFICATIONS
+           ========================================================================== */
+        function renderErrorGallery(filter) {
+            const grid = document.getElementById('error-gallery-grid');
+            grid.innerHTML = '';
+
+            const errors = [
+                { id: 'ERR_01', trueCls: 'Digit 4', predCls: 'Digit 9', conf: '74.2%', loss: 1.85 },
+                { id: 'ERR_02', trueCls: 'Digit 3', predCls: 'Digit 8', conf: '68.5%', loss: 2.12 },
+                { id: 'ERR_03', trueCls: 'Digit 7', predCls: 'Digit 1', conf: '81.0%', loss: 1.42 },
+                { id: 'ERR_04', trueCls: 'Shirt', predCls: 'T-Shirt', conf: '59.4%', loss: 1.20 }
+            ];
+
+            errors.forEach((err) => {
+                if (filter === 'high_loss' && err.loss < 1.5) return;
+
+                const card = document.createElement('div');
+                card.className = 'bg-slate-950 p-4 rounded-xl border border-rose-500/30 space-y-3 font-mono text-xs';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+                        <span class="text-rose-400 font-bold">${err.id}</span>
+                        <span class="text-gray-500">Loss: ${err.loss}</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-black border border-rose-500/40 rounded flex items-center justify-center font-bold text-rose-400">
+                            ?
+                        </div>
+                        <div class="space-y-0.5">
+                            <span class="block text-gray-400">True: <strong class="text-indigo-400">${err.trueCls}</strong></span>
+                            <span class="block text-gray-400">Pred: <strong class="text-rose-400">${err.predCls}</strong></span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-gray-400 pt-1 border-t border-slate-800">
+                        <span>Model Uncertainty:</span>
+                        <span class="text-amber-400 font-bold">${err.conf}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
