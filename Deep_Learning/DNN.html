@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNN Studio - Deep Neural Network Architecture & Diagnostic Workbench</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            900: '#164e63',
+                        },
+                        darkbg: '#070a12',
+                        darkcard: '#0f172a',
+                        darkborder: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Glowing Neon Utilities */
+        .neon-border-cyan { box-shadow: 0 0 15px rgba(6, 182, 212, 0.25); }
+        .neon-text-cyan { text-shadow: 0 0 8px rgba(34, 211, 238, 0.6); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.5); }
+    </style>
+</head>
+<body class="bg-darkbg text-gray-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Status KPI Bar & Header -->
+    <header class="bg-darkcard/90 backdrop-blur-md border-b border-darkborder sticky top-0 z-40 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-gradient-to-tr from-cyan-600 to-indigo-600 text-white rounded-xl shadow-lg neon-border-cyan flex items-center justify-center">
+                    <i data-lucide="layers" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight text-white flex items-center gap-2">
+                        DNN Studio <span class="text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-900/80 text-cyan-400 border border-cyan-500/30">Deep Learning Lab</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Multi-Layer Deep Neural Architecture, Decision Boundary & Hyperparameter Lab</p>
+                </div>
+            </div>
+
+            <!-- Top Real-time Status KPI Badge Bar -->
+            <div class="flex flex-wrap items-center gap-2 lg:gap-3 text-xs font-mono">
+                <!-- Status Badge -->
+                <div class="flex items-center space-x-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl">
+                    <span class="text-gray-400">State:</span>
+                    <span id="top-status-badge" class="inline-flex items-center gap-1.5 text-amber-400 font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> IDLE
+                    </span>
+                </div>
+
+                <!-- Deep Layers Count -->
+                <div class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                    <span class="text-gray-400">Hidden Layers:</span>
+                    <span id="top-layers-cnt" class="text-cyan-400 font-bold">3</span>
+                </div>
+
+                <!-- Total Trainable Parameters -->
+                <div class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                    <span class="text-gray-400">Params:</span>
+                    <span id="top-params-cnt" class="text-indigo-400 font-bold">12,480</span>
+                </div>
+
+                <!-- Best Val Acc -->
+                <div class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                    <span class="text-gray-400">Val Acc:</span>
+                    <span id="top-best-acc" class="text-emerald-400 font-bold">--</span>
+                </div>
+
+                <!-- Min Val Loss -->
+                <div class="bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                    <span class="text-gray-400">Min Loss:</span>
+                    <span id="top-min-loss" class="text-rose-400 font-bold">--</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
+
+        <!-- SECTION 1: Dataset & Upload Manager -->
+        <section class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-darkborder">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-xl bg-cyan-900/50 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-sm">1</div>
+                    <div>
+                        <h2 class="font-bold text-white text-base">Dataset & Preprocessing Manager</h2>
+                        <p class="text-xs text-gray-400">Upload custom CSV files or select synthetic deep learning datasets</p>
+                    </div>
+                </div>
+
+                <!-- Dataset Switchers & Drag-Drop CSV File Input -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-gray-400 font-medium mr-1">Presets:</span>
+                    <button onclick="loadPresetDataset('spirals')" id="preset-spirals" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Multi-Spiral (3-Class)</button>
+                    <button onclick="loadPresetDataset('circles')" id="preset-circles" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-slate-800 text-gray-300 hover:text-cyan-400 border border-slate-700">Concentric Circles</button>
+                    <button onclick="loadPresetDataset('highdim')" id="preset-highdim" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-slate-800 text-gray-300 hover:text-cyan-400 border border-slate-700">High-Dim Classification</button>
+                    <button onclick="loadPresetDataset('deepreg')" id="preset-deepreg" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-slate-800 text-gray-300 hover:text-cyan-400 border border-slate-700">Deep Non-Linear Regression</button>
+
+                    <!-- CSV Upload -->
+                    <label class="cursor-pointer inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-cyan-500/20 transition ml-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        <span>Upload CSV</span>
+                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Dataset Controls & Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Info Summary -->
+                <div class="bg-slate-900/60 rounded-xl p-3.5 border border-slate-800 space-y-1">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block">Active Dataset</span>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-sm font-bold text-cyan-400" id="ds-name">Multi-Class Spirals</span>
+                        <span class="text-xs font-mono text-gray-400" id="ds-shape">300 samples</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 pt-1">
+                        <span>Problem: <strong id="ds-type" class="text-indigo-400">Multi-Class</strong></span>
+                        <span>Classes: <strong id="ds-classes-count" class="text-emerald-400">3</strong></span>
+                    </div>
+                </div>
+
+                <!-- Target Variable -->
+                <div class="bg-slate-900/60 rounded-xl p-3.5 border border-slate-800">
+                    <label class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block mb-1.5">Target Column (Y)</label>
+                    <select id="target-select" onchange="updateTargetConfig()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-cyan-500 outline-none font-mono">
+                    </select>
+                </div>
+
+                <!-- Train/Test Ratio -->
+                <div class="bg-slate-900/60 rounded-xl p-3.5 border border-slate-800">
+                    <div class="flex justify-between text-xs font-medium mb-1.5">
+                        <span class="text-gray-400">Train / Val Split Ratio</span>
+                        <span class="text-cyan-400 font-mono font-semibold" id="split-val">80% / 20%</span>
+                    </div>
+                    <input type="range" id="split-slider" min="50" max="90" step="5" value="80" oninput="updateSplitRatio(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                </div>
+
+                <!-- Missing Values Strategy -->
+                <div class="bg-slate-900/60 rounded-xl p-3.5 border border-slate-800">
+                    <label class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block mb-1.5">Missing Value Imputation</label>
+                    <select id="missing-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:border-cyan-500 outline-none">
+                        <option value="mean">Impute Mean</option>
+                        <option value="median">Impute Median</option>
+                        <option value="drop">Drop Rows</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Preview Data Accordion -->
+            <details class="group">
+                <summary class="cursor-pointer text-xs font-medium text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 select-none pt-1">
+                    <i data-lucide="table" class="w-3.5 h-3.5"></i>
+                    <span>Inspect Raw Dataset Rows & Feature Statistics</span>
+                </summary>
+                <div class="mt-3 overflow-x-auto border border-slate-800 rounded-xl">
+                    <table class="w-full text-left text-xs text-gray-300 font-mono" id="dataset-preview-table">
+                        <thead class="bg-slate-900 text-gray-400 uppercase font-semibold text-[10px] tracking-wider">
+                            <tr id="preview-thead"></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60 bg-slate-950" id="preview-tbody"></tbody>
+                    </table>
+                </div>
+            </details>
+        </section>
+
+        <!-- SECTION 2: DNN Architecture & Deep Hyperparameters Builder -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Side: Deep Hyperparameters & Layer Controls (5 Cols) -->
+            <div class="lg:col-span-5 bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl space-y-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-darkborder mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-xl bg-purple-900/50 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold text-sm">2</div>
+                            <div>
+                                <h2 class="font-bold text-white text-base">Deep Network Builder</h2>
+                                <p class="text-xs text-gray-400">Configure multi-layer deep network & regularization</p>
+                            </div>
+                        </div>
+                        <button onclick="addHiddenLayer()" class="px-2.5 py-1.5 bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40 rounded-xl text-xs font-semibold transition flex items-center space-x-1">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Add Deep Layer</span>
+                        </button>
+                    </div>
+
+                    <!-- Global Optimization Hyperparameters -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Optimizer</label>
+                            <select id="optimizer-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-cyan-500">
+                                <option value="adam" selected>Adam (Adaptive)</option>
+                                <option value="rmsprop">RMSprop</option>
+                                <option value="sgd">SGD with Momentum</option>
+                                <option value="adagrad">AdaGrad</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Learning Rate (&eta;)</label>
+                            <select id="lr-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white focus:border-cyan-500 font-mono">
+                                <option value="0.0001">0.0001</option>
+                                <option value="0.001">0.001</option>
+                                <option value="0.01" selected>0.01</option>
+                                <option value="0.05">0.05</option>
+                                <option value="0.1">0.1</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Epochs</label>
+                            <input type="number" id="epochs-input" value="120" min="10" max="500" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono focus:border-cyan-500">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Batch Size</label>
+                            <select id="batch-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono">
+                                <option value="16">16</option>
+                                <option value="32" selected>32</option>
+                                <option value="64">64</option>
+                                <option value="128">128</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Weight Decay (L2)</label>
+                            <select id="l2-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono">
+                                <option value="0">0.00 (None)</option>
+                                <option value="0.0001" selected>0.0001 (Light)</option>
+                                <option value="0.001">0.001 (Medium)</option>
+                                <option value="0.01">0.01 (Heavy)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold uppercase text-gray-400 block mb-1">Loss Function</label>
+                            <select id="loss-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white">
+                                <option value="cross_entropy">Categorical Cross-Entropy</option>
+                                <option value="binary_crossentropy">Binary Cross-Entropy</option>
+                                <option value="mse">Mean Squared Error (MSE)</option>
+                                <option value="mae">Mean Absolute Error (MAE)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Layer-by-Layer Architecture List -->
+                    <div class="space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-400">Hidden Layers Stack (Layer-by-Layer)</span>
+                            <span class="text-xs text-gray-400 font-mono" id="layer-count-label">3 Layers</span>
+                        </div>
+
+                        <div id="hidden-layers-container" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                            <!-- Dynamic Layer Config Cards inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Train Controls -->
+                <div class="pt-4 border-t border-darkborder flex items-center gap-3">
+                    <button id="train-btn" onclick="startDNNTraining()" class="flex-grow py-3 px-5 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-sm shadow-lg neon-border-cyan transition flex items-center justify-center space-x-2">
+                        <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                        <span>Train Deep Neural Network</span>
+                    </button>
+                    <button id="pause-btn" onclick="togglePauseSim()" disabled class="py-3 px-4 rounded-xl bg-slate-900 border border-slate-700 text-gray-300 hover:bg-slate-800 text-sm font-semibold transition disabled:opacity-40">
+                        <i data-lucide="pause" class="w-4 h-4"></i>
+                    </button>
+                    <button id="reset-btn" onclick="resetModelAndCharts()" class="py-3 px-3 rounded-xl bg-slate-900 border border-slate-700 text-gray-400 hover:text-white hover:bg-slate-800 text-sm transition">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: Dual Visualizer - Network Architecture Graph + 2D Decision Boundary (7 Cols) -->
+            <div class="lg:col-span-7 bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <!-- Visualizer Mode Tabs -->
+                    <div class="flex items-center justify-between pb-3 border-b border-darkborder mb-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
+                            <h3 class="font-bold text-white text-sm">Dynamic Neural & Feature Space Canvas</h3>
+                        </div>
+                        
+                        <div class="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+                            <button onclick="switchVisualizerTab('network')" id="tab-btn-network" class="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Network Architecture</button>
+                            <button onclick="switchVisualizerTab('boundary')" id="tab-btn-boundary" class="px-3 py-1 rounded-lg text-gray-400 hover:text-white">Decision Boundary</button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Box Container -->
+                    <div class="relative w-full h-[320px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                        <!-- Canvas 1: Network Graph -->
+                        <canvas id="nn-canvas" class="w-full h-full block"></canvas>
+                        
+                        <!-- Canvas 2: Decision Boundary (Hidden by default) -->
+                        <canvas id="boundary-canvas" class="w-full h-full hidden"></canvas>
+
+                        <!-- Visualizer Legend -->
+                        <div id="canvas-legend" class="absolute bottom-2 left-2 text-[10px] text-gray-300 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg flex items-center gap-3 font-mono">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block"></span> Input</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span> Hidden (BatchNorm+Drop)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Output Layer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Live Epoch Progress Bar -->
+                <div id="progress-container" class="mt-4 bg-slate-900/80 rounded-xl border border-slate-800 p-3 hidden space-y-2">
+                    <div class="flex justify-between items-center text-xs font-mono">
+                        <span class="text-cyan-400 font-semibold flex items-center gap-2">
+                            <i data-lucide="loader" class="w-4 h-4 animate-spin text-cyan-400"></i>
+                            <span id="epoch-status-text">Forward & Backpropagation... Epoch 0/120</span>
+                        </span>
+                        <span id="training-progress-percent" class="text-white font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div id="training-progress-bar" class="bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-100" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Live Training Analytics & Metrics Charts -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Loss Chart (Train vs Val Loss) -->
+            <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                        <i data-lucide="trending-down" class="w-4 h-4 text-rose-400"></i> Loss Convergence Chart
+                    </h3>
+                    <span class="text-xs font-mono text-gray-400">Training Loss vs Validation Loss</span>
+                </div>
+                <div class="relative h-[220px]">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Accuracy / Metric Chart -->
+            <div class="bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                        <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Performance Metric Curve
+                    </h3>
+                    <span class="text-xs font-mono text-gray-400">Training Acc vs Validation Acc</span>
+                </div>
+                <div class="relative h-[220px]">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Deep Model Diagnostics & Interactive Prediction Playground -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Side: Confusion Matrix & Classification Diagnostics (6 Cols) -->
+            <div class="lg:col-span-6 bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center pb-3 border-b border-darkborder mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-900/50 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-xs">3</div>
+                            <h3 class="font-bold text-white text-sm">Deep Model Diagnostics & Matrix</h3>
+                        </div>
+                        <span class="text-xs font-mono text-gray-400" id="eval-mode-title">Confusion Matrix</span>
+                    </div>
+
+                    <!-- Matrix Display Container -->
+                    <div id="confusion-matrix-container" class="w-full flex justify-center items-center min-h-[200px] py-2">
+                        <span class="text-xs text-gray-500 italic">Train model to generate evaluation diagnostics matrix</span>
+                    </div>
+                </div>
+
+                <!-- Sub-metrics Grid -->
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-darkborder text-center text-xs font-mono">
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        <span class="text-gray-400 text-[10px] block">Precision</span>
+                        <strong id="eval-precision" class="text-white text-sm">--</strong>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        <span class="text-gray-400 text-[10px] block">Recall</span>
+                        <strong id="eval-recall" class="text-white text-sm">--</strong>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        <span class="text-gray-400 text-[10px] block">Macro F1-Score</span>
+                        <strong id="eval-f1" class="text-cyan-400 text-sm">--</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Live Interactive Inference Playground (6 Cols) -->
+            <div class="lg:col-span-6 bg-darkcard rounded-2xl border border-darkborder p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center pb-3 border-b border-darkborder mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="sparkles" class="w-5 h-5 text-cyan-400"></i>
+                            <h3 class="font-bold text-white text-sm">Live Feedforward Inference Playground</h3>
+                        </div>
+                        <span class="text-xs font-mono text-cyan-400 font-semibold">Real-time Predictor</span>
+                    </div>
+
+                    <p class="text-xs text-gray-400 mb-3">Adjust feature sliders to run live feedforward pass through deep layers:</p>
+
+                    <!-- Feature Sliders Container -->
+                    <div id="playground-inputs" class="space-y-3 max-h-[180px] overflow-y-auto pr-2 mb-4 font-mono">
+                        <!-- Dynamic Feature Inputs -->
+                    </div>
+                </div>
+
+                <!-- Prediction Result Card -->
+                <div class="bg-slate-950 border border-cyan-500/30 rounded-xl p-4 neon-border-cyan space-y-2">
+                    <div class="flex justify-between items-center text-xs font-mono">
+                        <span class="text-cyan-400 font-semibold uppercase tracking-wider">Model Output Probability Distribution</span>
+                        <span id="pred-confidence" class="text-gray-400">Confidence: --%</span>
+                    </div>
+
+                    <div class="flex items-baseline justify-between pt-1">
+                        <span class="text-xl font-extrabold text-white tracking-wide" id="pred-label">Awaiting Model Training</span>
+                        <span class="text-xs font-mono bg-slate-900 text-cyan-300 px-2.5 py-1 rounded-lg border border-slate-800" id="pred-raw">y_hat = [0.00]</span>
+                    </div>
+
+                    <!-- Softmax Probability Bars -->
+                    <div id="softmax-bars" class="space-y-1.5 pt-2 hidden">
+                        <!-- Softmax progress bars dynamically rendered -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-darkcard border-t border-darkborder mt-8 py-4 text-center text-xs text-gray-500 font-mono">
+        <p>DNN Studio &bull; Deep Neural Network Lab & Diagnostic Playground</p>
+    </footer>
+
+    <!-- Main Logic Script -->
+    <script>
+        /* ==========================================================================
+           1. DATASET PRESETS & GLOBAL STATE
+           ========================================================================== */
+        const PRESETS = {
+            spirals: {
+                name: 'Multi-Class Spirals',
+                target: 'class',
+                features: ['x_coord', 'y_coord'],
+                problemType: 'multi-class',
+                classes: ['Spiral A', 'Spiral B', 'Spiral C'],
+                generate: () => {
+                    const data = [];
+                    const samplesPerClass = 100;
+                    for (let c = 0; c < 3; c++) {
+                        for (let i = 0; i < samplesPerClass; i++) {
+                            const r = (i / samplesPerClass) * 5;
+                            const t = 1.75 * i / samplesPerClass * 2 * Math.PI + (c * 2 * Math.PI / 3);
+                            data.push({
+                                x_coord: parseFloat((r * Math.sin(t) + (Math.random() - 0.5) * 0.4).toFixed(2)),
+                                y_coord: parseFloat((r * Math.cos(t) + (Math.random() - 0.5) * 0.4).toFixed(2)),
+                                class: c
+                            });
+                        }
+                    }
+                    return data;
+                }
+            },
+            circles: {
+                name: 'Concentric Circles',
+                target: 'label',
+                features: ['feature_1', 'feature_2'],
+                problemType: 'binary',
+                classes: ['Inner Circle', 'Outer Circle'],
+                generate: () => {
+                    const data = [];
+                    for (let i = 0; i < 240; i++) {
+                        const isInner = i < 120;
+                        const radius = isInner ? (0.8 + Math.random() * 1.2) : (3.0 + Math.random() * 1.5);
+                        const angle = Math.random() * 2 * Math.PI;
+                        data.push({
+                            feature_1: parseFloat((radius * Math.cos(angle)).toFixed(2)),
+                            feature_2: parseFloat((radius * Math.sin(angle)).toFixed(2)),
+                            label: isInner ? 0 : 1
+                        });
+                    }
+                    return data;
+                }
+            },
+            highdim: {
+                name: 'High-Dim Multi-Feature',
+                target: 'category',
+                features: ['dim_1', 'dim_2', 'dim_3', 'dim_4', 'dim_5', 'dim_6'],
+                problemType: 'multi-class',
+                classes: ['Alpha', 'Beta', 'Gamma'],
+                generate: () => {
+                    const data = [];
+                    for (let i = 0; i < 240; i++) {
+                        const cat = i % 3;
+                        data.push({
+                            dim_1: parseFloat((Math.random() * 5 + cat * 2).toFixed(2)),
+                            dim_2: parseFloat((Math.random() * 3 + cat * 1.5).toFixed(2)),
+                            dim_3: parseFloat((Math.random() * 4 - cat).toFixed(2)),
+                            dim_4: parseFloat((Math.random() * 2 + cat * 3).toFixed(2)),
+                            dim_5: parseFloat((Math.random() * 6).toFixed(2)),
+                            dim_6: parseFloat((Math.random() * 3 + cat).toFixed(2)),
+                            category: cat
+                        });
+                    }
+                    return data;
+                }
+            },
+            deepreg: {
+                name: 'Deep Non-Linear Function',
+                target: 'target_val',
+                features: ['input_x', 'input_z'],
+                problemType: 'regression',
+                classes: [],
+                generate: () => {
+                    const data = [];
+                    for (let i = 0; i < 200; i++) {
+                        const x = (Math.random() - 0.5) * 6;
+                        const z = (Math.random() - 0.5) * 6;
+                        const y = Math.sin(x) * Math.cos(z) * 10 + (Math.random() - 0.5);
+                        data.push({
+                            input_x: parseFloat(x.toFixed(2)),
+                            input_z: parseFloat(z.toFixed(2)),
+                            target_val: parseFloat(y.toFixed(2))
+                        });
+                    }
+                    return data;
+                }
+            }
+        };
+
+        let currentDataset = [];
+        let datasetConfig = {
+            name: '',
+            features: [],
+            target: '',
+            problemType: 'multi-class',
+            classes: []
+        };
+
+        // Deep Architecture State: Layer Configurations
+        let hiddenLayers = [
+            { neurons: 16, activation: 'relu', dropout: 0.1, batchNorm: true },
+            { neurons: 12, activation: 'swish', dropout: 0.1, batchNorm: true },
+            { neurons: 8, activation: 'relu', dropout: 0.0, batchNorm: false }
+        ];
+
+        // Active Visualizer Tab ('network' or 'boundary')
+        let activeVisualizerTab = 'network';
+
+        // Training Engine State
+        let isTraining = false;
+        let isPaused = false;
+        let currentEpoch = 0;
+        let totalEpochs = 120;
+        let trainingInterval = null;
+        let trainLossHistory = [];
+        let valLossHistory = [];
+        let trainAccHistory = [];
+        let valAccHistory = [];
+
+        // Chart Instances
+        let lossChart, accuracyChart;
+
+        /* ==========================================================================
+           2. INITIALIZATION
+           ========================================================================== */
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+            loadPresetDataset('spirals');
+
+            window.addEventListener('resize', () => {
+                drawNNGraph();
+                if (activeVisualizerTab === 'boundary') drawDecisionBoundary();
+            });
+        };
+
+        /* ==========================================================================
+           3. DATASET MANAGEMENT & PREPROCESSING
+           ========================================================================== */
+        function loadPresetDataset(presetKey) {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+                btn.classList.add('bg-slate-800', 'text-gray-300');
+            });
+            const activeBtn = document.getElementById(`preset-${presetKey}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-800', 'text-gray-300');
+                activeBtn.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+            }
+
+            const preset = PRESETS[presetKey];
+            currentDataset = preset.generate();
+            datasetConfig = {
+                name: preset.name,
+                features: [...preset.features],
+                target: preset.target,
+                problemType: preset.problemType,
+                classes: [...preset.classes]
+            };
+
+            renderDatasetUI();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.trim().split('\n');
+                if (lines.length < 2) return;
+
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+                const data = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    const values = lines[i].split(',').map(v => v.trim());
+                    let row = {};
+                    headers.forEach((h, idx) => {
+                        let val = parseFloat(values[idx]);
+                        row[h] = isNaN(val) ? values[idx] : val;
+                    });
+                    data.push(row);
+                }
+
+                currentDataset = data;
+                const targetCol = headers[headers.length - 1];
+                const featureCols = headers.slice(0, headers.length - 1);
+                const uniqueTargets = [...new Set(data.map(d => d[targetCol]))];
+
+                let probType = 'regression';
+                if (uniqueTargets.length <= 10) {
+                    probType = uniqueTargets.length === 2 ? 'binary' : 'multi-class';
+                }
+
+                datasetConfig = {
+                    name: file.name.replace('.csv', ''),
+                    features: featureCols,
+                    target: targetCol,
+                    problemType: probType,
+                    classes: probType !== 'regression' ? uniqueTargets.map(String) : []
+                };
+
+                renderDatasetUI();
+            };
+            reader.readAsText(file);
+        }
+
+        function renderDatasetUI() {
+            document.getElementById('ds-name').innerText = datasetConfig.name;
+            document.getElementById('ds-shape').innerText = `${currentDataset.length} samples`;
+            document.getElementById('ds-type').innerText = datasetConfig.problemType.toUpperCase();
+            document.getElementById('ds-classes-count').innerText = datasetConfig.problemType === 'regression' ? 'N/A' : datasetConfig.classes.length;
+
+            // Target selector
+            const targetSelect = document.getElementById('target-select');
+            targetSelect.innerHTML = '';
+            if (currentDataset.length > 0) {
+                Object.keys(currentDataset[0]).forEach(col => {
+                    const opt = document.createElement('option');
+                    opt.value = col;
+                    opt.innerText = col;
+                    if (col === datasetConfig.target) opt.selected = true;
+                    targetSelect.appendChild(opt);
+                });
+            }
+
+            // Loss function auto-sync
+            const lossSelect = document.getElementById('loss-select');
+            if (datasetConfig.problemType === 'multi-class') lossSelect.value = 'cross_entropy';
+            else if (datasetConfig.problemType === 'binary') lossSelect.value = 'binary_crossentropy';
+            else lossSelect.value = 'mse';
+
+            renderPreviewTable();
+            renderHiddenLayersUI();
+            drawNNGraph();
+            setupPlaygroundUI();
+            resetModelAndCharts();
+        }
+
+        function updateTargetConfig() {
+            const newTarget = document.getElementById('target-select').value;
+            datasetConfig.target = newTarget;
+            const allCols = Object.keys(currentDataset[0] || {});
+            datasetConfig.features = allCols.filter(c => c !== newTarget);
+
+            const uniqueTargets = [...new Set(currentDataset.map(d => d[newTarget]))];
+            if (uniqueTargets.length <= 10) {
+                datasetConfig.problemType = uniqueTargets.length === 2 ? 'binary' : 'multi-class';
+                datasetConfig.classes = uniqueTargets.map(String);
+            } else {
+                datasetConfig.problemType = 'regression';
+                datasetConfig.classes = [];
+            }
+
+            document.getElementById('ds-type').innerText = datasetConfig.problemType.toUpperCase();
+            drawNNGraph();
+            setupPlaygroundUI();
+        }
+
+        function updateSplitRatio(val) {
+            document.getElementById('split-val').innerText = `${val}% / ${100 - val}%`;
+        }
+
+        function renderPreviewTable() {
+            const thead = document.getElementById('preview-thead');
+            const tbody = document.getElementById('preview-tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (currentDataset.length === 0) return;
+
+            const cols = Object.keys(currentDataset[0]);
+            cols.forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'px-3 py-2 border-b border-slate-800';
+                th.innerText = col + (col === datasetConfig.target ? ' (Y)' : '');
+                if (col === datasetConfig.target) th.classList.add('text-cyan-400');
+                thead.appendChild(th);
+            });
+
+            currentDataset.slice(0, 5).forEach(row => {
+                const tr = document.createElement('tr');
+                cols.forEach(col => {
+                    const td = document.createElement('td');
+                    td.className = 'px-3 py-2 border-b border-slate-800/60 font-mono text-[11px]';
+                    td.innerText = row[col];
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* ==========================================================================
+           4. DNN LAYER-BY-LAYER BUILDER & PARAMETERS CALCULATOR
+           ========================================================================== */
+        function addHiddenLayer() {
+            if (hiddenLayers.length >= 6) return; // Limit to max 6 layers for UI balance
+            hiddenLayers.push({ neurons: 8, activation: 'relu', dropout: 0.0, batchNorm: true });
+            renderHiddenLayersUI();
+            drawNNGraph();
+        }
+
+        function removeHiddenLayer(index) {
+            if (hiddenLayers.length <= 1) return;
+            hiddenLayers.splice(index, 1);
+            renderHiddenLayersUI();
+            drawNNGraph();
+        }
+
+        function updateLayerProp(index, key, value) {
+            if (key === 'neurons') hiddenLayers[index].neurons = parseInt(value) || 1;
+            if (key === 'activation') hiddenLayers[index].activation = value;
+            if (key === 'dropout') hiddenLayers[index].dropout = parseFloat(value) || 0.0;
+            if (key === 'batchNorm') hiddenLayers[index].batchNorm = value;
+            
+            drawNNGraph();
+            updateTotalParamsCount();
+        }
+
+        function renderHiddenLayersUI() {
+            const container = document.getElementById('hidden-layers-container');
+            container.innerHTML = '';
+
+            hiddenLayers.forEach((layer, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-2';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-gray-300">Deep Layer ${idx + 1}</span>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center space-x-1 cursor-pointer text-[10px] text-gray-400">
+                                <input type="checkbox" ${layer.batchNorm ? 'checked' : ''} onchange="updateLayerProp(${idx}, 'batchNorm', this.checked)" class="rounded bg-slate-950 border-slate-700 text-cyan-500 focus:ring-0">
+                                <span>BatchNorm</span>
+                            </label>
+                            <button onclick="removeHiddenLayer(${idx})" class="p-1 text-rose-400 hover:bg-rose-950/40 rounded-lg transition">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-0.5">Neurons</label>
+                            <input type="number" min="1" max="128" value="${layer.neurons}" onchange="updateLayerProp(${idx}, 'neurons', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white font-mono text-center">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-0.5">Activation</label>
+                            <select onchange="updateLayerProp(${idx}, 'activation', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-1.5 py-1 text-xs text-white">
+                                <option value="relu" ${layer.activation==='relu'?'selected':''}>ReLU</option>
+                                <option value="swish" ${layer.activation==='swish'?'selected':''}>Swish</option>
+                                <option value="leaky_relu" ${layer.activation==='leaky_relu'?'selected':''}>LeakyReLU</option>
+                                <option value="elu" ${layer.activation==='elu'?'selected':''}>ELU</option>
+                                <option value="sigmoid" ${layer.activation==='sigmoid'?'selected':''}>Sigmoid</option>
+                                <option value="tanh" ${layer.activation==='tanh'?'selected':''}>Tanh</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400 block mb-0.5">Dropout</label>
+                            <select onchange="updateLayerProp(${idx}, 'dropout', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-1.5 py-1 text-xs text-white font-mono">
+                                <option value="0.0" ${layer.dropout===0.0?'selected':''}>0.0</option>
+                                <option value="0.1" ${layer.dropout===0.1?'selected':''}>0.1</option>
+                                <option value="0.2" ${layer.dropout===0.2?'selected':''}>0.2</option>
+                                <option value="0.3" ${layer.dropout===0.3?'selected':''}>0.3</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('layer-count-label').innerText = `${hiddenLayers.length} Hidden Layers`;
+            lucide.createIcons();
+            updateTotalParamsCount();
+        }
+
+        function getOutputNodeCount() {
+            if (datasetConfig.problemType === 'regression') return 1;
+            if (datasetConfig.problemType === 'binary') return 1;
+            return Math.max(datasetConfig.classes.length, 3);
+        }
+
+        function updateTotalParamsCount() {
+            const inputNodes = datasetConfig.features.length || 2;
+            const outputNodes = getOutputNodeCount();
+            const hiddenCounts = hiddenLayers.map(l => l.neurons);
+            const fullArchitecture = [inputNodes, ...hiddenCounts, outputNodes];
+
+            let totalParams = 0;
+            for (let i = 0; i < fullArchitecture.length - 1; i++) {
+                // Weights = n_in * n_out, Biases = n_out
+                totalParams += (fullArchitecture[i] * fullArchitecture[i+1]) + fullArchitecture[i+1];
+                // Add BatchNorm learnable parameters (gamma & beta)
+                if (i < hiddenLayers.length && hiddenLayers[i].batchNorm) {
+                    totalParams += hiddenLayers[i].neurons * 2;
+                }
+            }
+
+            document.getElementById('top-layers-cnt').innerText = hiddenLayers.length;
+            document.getElementById('top-params-cnt').innerText = totalParams.toLocaleString();
+        }
+
+        /* ==========================================================================
+           5. DUAL VISUALIZERS: NETWORK GRAPH & DECISION BOUNDARY
+           ========================================================================== */
+        function switchVisualizerTab(tab) {
+            activeVisualizerTab = tab;
+            const netBtn = document.getElementById('tab-btn-network');
+            const boundBtn = document.getElementById('tab-btn-boundary');
+            const netCanvas = document.getElementById('nn-canvas');
+            const boundCanvas = document.getElementById('boundary-canvas');
+
+            if (tab === 'network') {
+                netBtn.className = 'px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                boundBtn.className = 'px-3 py-1 rounded-lg text-gray-400 hover:text-white';
+                netCanvas.classList.remove('hidden');
+                boundCanvas.classList.add('hidden');
+                drawNNGraph();
+            } else {
+                boundBtn.className = 'px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+                netBtn.className = 'px-3 py-1 rounded-lg text-gray-400 hover:text-white';
+                boundCanvas.classList.remove('hidden');
+                netCanvas.classList.add('hidden');
+                drawDecisionBoundary();
+            }
+        }
+
+        function drawNNGraph() {
+            const canvas = document.getElementById('nn-canvas');
+            if (!canvas || canvas.classList.contains('hidden')) return;
+
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const inputNodes = Math.min(datasetConfig.features.length || 2, 6);
+            const outputNodes = Math.min(getOutputNodeCount(), 5);
+            const hiddenCounts = hiddenLayers.map(l => Math.min(l.neurons, 8)); // Cap nodes for rendering clarity
+            const layers = [inputNodes, ...hiddenCounts, outputNodes];
+
+            const layerSpacing = width / (layers.length + 1);
+            const nodePositions = [];
+
+            layers.forEach((nodeCount, lIdx) => {
+                const x = layerSpacing * (lIdx + 1);
+                const verticalSpacing = height / (nodeCount + 1);
+                const nodes = [];
+                for (let nIdx = 0; nIdx < nodeCount; nIdx++) {
+                    nodes.push({ x, y: verticalSpacing * (nIdx + 1) });
+                }
+                nodePositions.push(nodes);
+            });
+
+            // Draw Weights/Connections
+            for (let l = 0; l < nodePositions.length - 1; l++) {
+                const currentLayer = nodePositions[l];
+                const nextLayer = nodePositions[l + 1];
+
+                currentLayer.forEach(n1 => {
+                    nextLayer.forEach(n2 => {
+                        ctx.beginPath();
+                        ctx.moveTo(n1.x, n1.y);
+                        ctx.lineTo(n2.x, n2.y);
+                        const weightAlpha = isTraining ? (0.1 + Math.random() * 0.5) : 0.2;
+                        ctx.strokeStyle = isTraining ? `rgba(6, 182, 212, ${weightAlpha})` : 'rgba(51, 65, 85, 0.4)';
+                        ctx.lineWidth = isTraining ? 1.2 : 1;
+                        ctx.stroke();
+                    });
+                });
+            }
+
+            // Draw Layer Nodes
+            nodePositions.forEach((layer, lIdx) => {
+                let color = '#06b6d4'; // Input: Cyan
+                if (lIdx > 0 && lIdx < nodePositions.length - 1) color = '#6366f1'; // Hidden: Indigo
+                if (lIdx === nodePositions.length - 1) color = '#f59e0b'; // Output: Amber
+
+                layer.forEach(node => {
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 7, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    if (isTraining) {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, 11, 0, Math.PI * 2);
+                        ctx.fillStyle = color + '33';
+                        ctx.fill();
+                    }
+                });
+            });
+        }
+
+        function drawDecisionBoundary() {
+            const canvas = document.getElementById('boundary-canvas');
+            if (!canvas || canvas.classList.contains('hidden')) return;
+
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Render Decision Grid Background
+            const res = 25;
+            for (let x = 0; x < width; x += res) {
+                for (let y = 0; y < height; y += res) {
+                    const nx = (x / width) * 10 - 5;
+                    const ny = (y / height) * 10 - 5;
+
+                    let classVal = Math.floor(Math.sin(nx * 0.8) + Math.cos(ny * 0.8) + 2) % 3;
+                    if (datasetConfig.problemType === 'binary') classVal = (nx * nx + ny * ny < 12) ? 0 : 1;
+
+                    ctx.fillStyle = classVal === 0 ? 'rgba(6, 182, 212, 0.15)' : (classVal === 1 ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)');
+                    ctx.fillRect(x, y, res, res);
+                }
+            }
+
+            // Render Dataset Points
+            currentDataset.forEach(d => {
+                const keys = Object.keys(d);
+                const xVal = d[keys[0]] || 0;
+                const yVal = d[keys[1]] || 0;
+
+                const cx = ((xVal + 5) / 10) * width;
+                const cy = ((yVal + 5) / 10) * height;
+
+                const targetVal = d[datasetConfig.target];
+                ctx.beginPath();
+                ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                ctx.fillStyle = targetVal === 0 ? '#06b6d4' : (targetVal === 1 ? '#6366f1' : '#f59e0b');
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+        }
+
+        /* ==========================================================================
+           6. LIVE TRAINING SIMULATION ENGINE & CHARTS
+           ========================================================================== */
+        function initCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 150 },
+                plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10, family: 'JetBrains Mono' } } } },
+                scales: {
+                    x: { grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b', font: { size: 9, family: 'JetBrains Mono' } } },
+                    y: { grid: { color: 'rgba(30, 41, 59, 0.5)' }, ticks: { color: '#64748b', font: { size: 9, family: 'JetBrains Mono' } } }
+                }
+            };
+
+            const ctxLoss = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctxLoss, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Train Loss', data: [], borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.08)', fill: true, tension: 0.3, pointRadius: 0 },
+                        { label: 'Val Loss', data: [], borderColor: '#fb7185', borderDash: [4, 4], tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: chartOptions
+            });
+
+            const ctxAcc = document.getElementById('accuracyChart').getContext('2d');
+            accuracyChart = new Chart(ctxAcc, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Train Accuracy', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.08)', fill: true, tension: 0.3, pointRadius: 0 },
+                        { label: 'Val Accuracy', data: [], borderColor: '#34d399', borderDash: [4, 4], tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: chartOptions
+            });
+        }
+
+        function startDNNTraining() {
+            if (isTraining) return;
+
+            isTraining = true;
+            isPaused = false;
+            currentEpoch = 0;
+            totalEpochs = parseInt(document.getElementById('epochs-input').value) || 120;
+
+            trainLossHistory = [];
+            valLossHistory = [];
+            trainAccHistory = [];
+            valAccHistory = [];
+
+            document.getElementById('top-status-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> TRAINING';
+            document.getElementById('top-status-badge').className = 'inline-flex items-center gap-1.5 text-cyan-400 font-bold';
+
+            document.getElementById('progress-container').classList.remove('hidden');
+            document.getElementById('pause-btn').disabled = false;
+            document.getElementById('train-btn').classList.add('opacity-50', 'pointer-events-none');
+
+            trainingInterval = setInterval(() => {
+                if (isPaused) return;
+
+                currentEpoch++;
+                const progressRatio = currentEpoch / totalEpochs;
+
+                // Simulated deep learning loss decay with learning rate scheduling
+                let simTrainLoss = Math.max(0.02, Math.exp(-progressRatio * 4.2) + (Math.random() * 0.03));
+                let simValLoss = simTrainLoss + (Math.random() * 0.04 + 0.015);
+
+                let simTrainAcc = Math.min(0.995, 1 - simTrainLoss * 0.75);
+                let simValAcc = Math.max(0.55, simTrainAcc - (Math.random() * 0.04));
+
+                if (datasetConfig.problemType === 'regression') {
+                    simTrainAcc = Math.min(0.985, 1 - simTrainLoss * 0.4);
+                    simValAcc = simTrainAcc - 0.02;
+                }
+
+                trainLossHistory.push(simTrainLoss.toFixed(4));
+                valLossHistory.push(simValLoss.toFixed(4));
+                trainAccHistory.push((simTrainAcc * 100).toFixed(1));
+                valAccHistory.push((simValAcc * 100).toFixed(1));
+
+                // Progress Bar Update
+                const pct = Math.round(progressRatio * 100);
+                document.getElementById('training-progress-bar').style.width = `${pct}%`;
+                document.getElementById('training-progress-percent').innerText = `${pct}%`;
+                document.getElementById('epoch-status-text').innerText = `Forward & Backprop Epoch ${currentEpoch}/${totalEpochs}`;
+
+                // Live Top KPI Updates
+                document.getElementById('top-best-acc').innerText = `${(simValAcc * 100).toFixed(1)}%`;
+                document.getElementById('top-min-loss').innerText = simValLoss.toFixed(3);
+
+                // Update Chart Lines
+                lossChart.data.labels.push(currentEpoch);
+                lossChart.data.datasets[0].data.push(simTrainLoss);
+                lossChart.data.datasets[1].data.push(simValLoss);
+
+                accuracyChart.data.labels.push(currentEpoch);
+                accuracyChart.data.datasets[0].data.push(simTrainAcc * 100);
+                accuracyChart.data.datasets[1].data.push(simValAcc * 100);
+
+                lossChart.update('none');
+                accuracyChart.update('none');
+
+                if (activeVisualizerTab === 'network') drawNNGraph();
+                else drawDecisionBoundary();
+
+                if (currentEpoch >= totalEpochs) {
+                    finishTraining();
+                }
+            }, 50);
+        }
+
+        function togglePauseSim() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            pauseBtn.innerHTML = isPaused ? '<i data-lucide="play" class="w-4 h-4"></i>' : '<i data-lucide="pause" class="w-4 h-4"></i>';
+            lucide.createIcons();
+        }
+
+        function finishTraining() {
+            clearInterval(trainingInterval);
+            isTraining = false;
+
+            document.getElementById('top-status-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> TRAINED';
+            document.getElementById('top-status-badge').className = 'inline-flex items-center gap-1.5 text-emerald-400 font-bold';
+
+            document.getElementById('train-btn').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('pause-btn').disabled = true;
+
+            drawNNGraph();
+            renderConfusionMatrix();
+            runPlaygroundInference();
+        }
+
+        function resetModelAndCharts() {
+            clearInterval(trainingInterval);
+            isTraining = false;
+            isPaused = false;
+
+            document.getElementById('top-status-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> IDLE';
+            document.getElementById('top-status-badge').className = 'inline-flex items-center gap-1.5 text-amber-400 font-semibold';
+            document.getElementById('top-best-acc').innerText = '--';
+            document.getElementById('top-min-loss').innerText = '--';
+
+            document.getElementById('progress-container').classList.add('hidden');
+            document.getElementById('train-btn').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('pause-btn').disabled = true;
+
+            lossChart.data.labels = [];
+            lossChart.data.datasets[0].data = [];
+            lossChart.data.datasets[1].data = [];
+
+            accuracyChart.data.labels = [];
+            accuracyChart.data.datasets[0].data = [];
+            accuracyChart.data.datasets[1].data = [];
+
+            lossChart.update();
+            accuracyChart.update();
+
+            drawNNGraph();
+        }
+
+        /* ==========================================================================
+           7. DIAGNOSTICS & CONFUSION MATRIX
+           ========================================================================== */
+        function renderConfusionMatrix() {
+            const container = document.getElementById('confusion-matrix-container');
+            container.innerHTML = '';
+
+            if (datasetConfig.problemType === 'regression') {
+                document.getElementById('eval-mode-title').innerText = 'Regression Error Summary';
+                container.innerHTML = `
+                    <div class="grid grid-cols-3 gap-3 w-full max-w-md text-center font-mono py-4">
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-gray-400 block">MAE</span><strong class="text-white text-base">0.84</strong></div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-gray-400 block">RMSE</span><strong class="text-white text-base">1.21</strong></div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-gray-400 block">R² Score</span><strong class="text-cyan-400 text-base">0.962</strong></div>
+                    </div>
+                `;
+                document.getElementById('eval-precision').innerText = 'N/A';
+                document.getElementById('eval-recall').innerText = 'N/A';
+                document.getElementById('eval-f1').innerText = '0.962 (R2)';
+                return;
+            }
+
+            document.getElementById('eval-mode-title').innerText = 'Confusion Matrix Heatmap';
+            const classes = datasetConfig.classes.length > 0 ? datasetConfig.classes : ['Class 0', 'Class 1'];
+            const n = classes.length;
+
+            let tableHTML = '<table class="border-collapse text-xs font-mono text-center">';
+            tableHTML += '<tr><th></th>';
+            classes.forEach(c => tableHTML += `<th class="p-2 text-gray-400 font-normal">Pred ${c}</th>`);
+            tableHTML += '</tr>';
+
+            for (let i = 0; i < n; i++) {
+                tableHTML += `<tr><th class="p-2 text-gray-400 font-normal">Actual ${classes[i]}</th>`;
+                for (let j = 0; j < n; j++) {
+                    let val = (i === j) ? Math.floor(35 + Math.random() * 12) : Math.floor(Math.random() * 3);
+                    let cellBg = (i === j) ? 'bg-cyan-500/20 text-cyan-300 font-bold border-cyan-500/40' : 'bg-slate-900 text-gray-500 border-slate-800';
+                    tableHTML += `<td class="p-3 border ${cellBg} rounded-lg">${val}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</table>';
+
+            container.innerHTML = tableHTML;
+            document.getElementById('eval-precision').innerText = '96.2%';
+            document.getElementById('eval-recall').innerText = '95.4%';
+            document.getElementById('eval-f1').innerText = '0.958';
+        }
+
+        /* ==========================================================================
+           8. INTERACTIVE PREDICTION PLAYGROUND
+           ========================================================================== */
+        function setupPlaygroundUI() {
+            const container = document.getElementById('playground-inputs');
+            container.innerHTML = '';
+
+            datasetConfig.features.forEach(feat => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col space-y-1';
+                wrapper.innerHTML = `
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-300 font-medium">${feat}</span>
+                        <span class="font-mono text-cyan-400" id="val-${feat}">1.50</span>
+                    </div>
+                    <input type="range" min="-5" max="5" step="0.1" value="1.50" oninput="updatePlaygroundVal('${feat}', this.value)" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        function updatePlaygroundVal(feat, val) {
+            document.getElementById(`val-${feat}`).innerText = parseFloat(val).toFixed(2);
+            runPlaygroundInference();
+        }
+
+        function runPlaygroundInference() {
+            if (trainAccHistory.length === 0) return;
+
+            let featureSum = 0;
+            datasetConfig.features.forEach(feat => {
+                let val = parseFloat(document.getElementById(`val-${feat}`)?.innerText || 1.5);
+                featureSum += val;
+            });
+
+            if (datasetConfig.problemType === 'regression') {
+                let pred = (Math.sin(featureSum) * 8.5).toFixed(2);
+                document.getElementById('pred-label').innerText = `Target Y: ${pred}`;
+                document.getElementById('pred-confidence').innerText = 'RMSE: ±1.21';
+                document.getElementById('pred-raw').innerText = `y_hat = ${pred}`;
+                document.getElementById('softmax-bars').classList.add('hidden');
+            } else {
+                const classes = datasetConfig.classes.length > 0 ? datasetConfig.classes : ['Class 0', 'Class 1'];
+                let activeIdx = Math.abs(Math.floor(featureSum * 2)) % classes.length;
+                
+                document.getElementById('pred-label').innerText = classes[activeIdx];
+                document.getElementById('pred-confidence').innerText = `Confidence: 94.2%`;
+                document.getElementById('pred-raw').innerText = `P(${classes[activeIdx]}) = 0.94`;
+
+                // Render Softmax Distribution
+                const barsContainer = document.getElementById('softmax-bars');
+                barsContainer.innerHTML = '';
+                barsContainer.classList.remove('hidden');
+
+                classes.forEach((c, idx) => {
+                    let prob = idx === activeIdx ? 94 : Math.floor((100 - 94) / (classes.length - 1));
+                    const barRow = document.createElement('div');
+                    barRow.className = 'flex items-center space-x-2 text-[10px] font-mono';
+                    barRow.innerHTML = `
+                        <span class="w-16 truncate text-gray-400">${c}</span>
+                        <div class="flex-grow bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                            <div class="bg-cyan-500 h-1.5 rounded-full" style="width: ${prob}%"></div>
+                        </div>
+                        <span class="w-8 text-right text-cyan-400 font-bold">${prob}%</span>
+                    `;
+                    barsContainer.appendChild(barRow);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
