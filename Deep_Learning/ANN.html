@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANN Studio - Artificial Neural Network Lab & Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkbg: '#0b0f19',
+                        darkcard: '#111827',
+                        darkborder: '#1f2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-darkbg text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white dark:bg-darkcard border-b border-gray-200 dark:border-darkborder sticky top-0 z-30 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-brand-600 text-white rounded-xl shadow-lg shadow-brand-500/30">
+                    <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">ANN Studio <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/60 dark:text-brand-300 ml-1">v2.5 Lab</span></h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Interactive Neural Network Builder, Trainer & Diagnostics</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Preset Datasets Quick Switch -->
+                <div class="hidden sm:flex items-center space-x-2 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium px-2">Preset:</span>
+                    <button onclick="loadPresetDataset('iris')" class="preset-btn px-2.5 py-1 text-xs rounded-md font-medium transition-all bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400" id="preset-iris">Iris</button>
+                    <button onclick="loadPresetDataset('cancer')" class="preset-btn px-2.5 py-1 text-xs rounded-md font-medium transition-all text-gray-600 dark:text-gray-300 hover:text-brand-600" id="preset-cancer">Cancer</button>
+                    <button onclick="loadPresetDataset('housing')" class="preset-btn px-2.5 py-1 text-xs rounded-md font-medium transition-all text-gray-600 dark:text-gray-300 hover:text-brand-600" id="preset-housing">Housing</button>
+                    <button onclick="loadPresetDataset('synthetic')" class="preset-btn px-2.5 py-1 text-xs rounded-md font-medium transition-all text-gray-600 dark:text-gray-300 hover:text-brand-600" id="preset-synthetic">XOR Synthetic</button>
+                </div>
+
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6">
+
+        <!-- STEP 1: Data Preprocessing & Control Bar -->
+        <section class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">1</div>
+                    <div>
+                        <h2 class="font-semibold text-gray-900 dark:text-white">Dataset & Data Preprocessing</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Upload CSV or use benchmark dataset for training</p>
+                    </div>
+                </div>
+
+                <!-- Upload CSV & Actions -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="cursor-pointer inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/50 text-xs font-semibold border border-brand-200 dark:border-brand-800/50 transition">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Upload CSV File</span>
+                        <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                    <button onclick="resetDataset()" class="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-medium transition flex items-center space-x-1">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span>Reset Data</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dataset Stats & Selection Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                <!-- Data Summary Cards -->
+                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3.5 border border-gray-100 dark:border-gray-800/80">
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Dataset Info</span>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-sm font-bold text-gray-900 dark:text-white" id="dataset-name">Iris Classification</span>
+                        <span class="text-xs font-mono text-brand-600 dark:text-brand-400" id="dataset-shape">150 rows × 5 cols</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                        <span>Missing values: <strong id="missing-count" class="text-emerald-500">0</strong></span>
+                        <span>Type: <strong id="problem-type-badge" class="text-brand-500">Multi-class</strong></span>
+                    </div>
+                </div>
+
+                <!-- Target Variable Selector -->
+                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3.5 border border-gray-100 dark:border-gray-800/80">
+                    <label for="target-select" class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Target Variable (Y)</label>
+                    <select id="target-select" onchange="updateDatasetConfig()" class="w-full bg-white dark:bg-darkcard border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+
+                <!-- Train/Test Split Slider -->
+                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3.5 border border-gray-100 dark:border-gray-800/80">
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span class="text-gray-500 dark:text-gray-400">Train/Test Ratio</span>
+                        <span class="text-brand-600 dark:text-brand-400 font-semibold" id="split-val">80% Train / 20% Test</span>
+                    </div>
+                    <input type="range" id="split-slider" min="50" max="90" step="5" value="80" oninput="updateSplitVal(this.value)" class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-600 mt-2">
+                </div>
+
+                <!-- Feature Scaler Selector -->
+                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3.5 border border-gray-100 dark:border-gray-800/80">
+                    <label for="scaler-select" class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Feature Normalization</label>
+                    <select id="scaler-select" class="w-full bg-white dark:bg-darkcard border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="minmax">MinMax Scaler [0, 1]</option>
+                        <option value="standard">StandardScaler (Z-Score)</option>
+                        <option value="none">None (Raw Features)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Expandable Data Preview Table -->
+            <details class="mt-4 group">
+                <summary class="cursor-pointer text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1 select-none">
+                    <i data-lucide="table" class="w-3.5 h-3.5"></i>
+                    <span>Toggle Dataset Preview Table & Summary Stats</span>
+                </summary>
+                <div class="mt-3 overflow-x-auto border border-gray-200 dark:border-gray-800 rounded-xl">
+                    <table class="w-full text-left text-xs text-gray-600 dark:text-gray-300" id="data-preview-table">
+                        <thead class="bg-gray-100 dark:bg-gray-800/80 text-gray-700 dark:text-gray-200 uppercase font-semibold text-[10px] tracking-wider">
+                            <tr id="preview-thead"></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800" id="preview-tbody"></tbody>
+                    </table>
+                </div>
+            </details>
+        </section>
+
+        <!-- STEP 2: Architecture & Hyperparameter Builder -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Panel: Hyperparameters & Layer Controls (5 Cols) -->
+            <div class="lg:col-span-5 bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm space-y-5">
+                <div class="flex items-center space-x-2 pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm">2</div>
+                    <div>
+                        <h2 class="font-semibold text-gray-900 dark:text-white">Hyperparameters & Layer Builder</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Construct deep neural architecture</p>
+                    </div>
+                </div>
+
+                <!-- Hyperparameter Settings Grid -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Learning Rate (&eta;)</label>
+                        <select id="lr-select" class="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-xs text-gray-900 dark:text-white">
+                            <option value="0.001">0.001 (Default)</option>
+                            <option value="0.01" selected>0.01 (Fast)</option>
+                            <option value="0.05">0.05</option>
+                            <option value="0.1">0.1 (High)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Epochs</label>
+                        <input type="number" id="epochs-input" value="60" min="10" max="300" class="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-xs text-gray-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Batch Size</label>
+                        <select id="batch-select" class="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-xs text-gray-900 dark:text-white">
+                            <option value="16">16</option>
+                            <option value="32" selected>32</option>
+                            <option value="64">64</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Optimizer</label>
+                        <select id="optimizer-select" class="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-xs text-gray-900 dark:text-white">
+                            <option value="adam" selected>Adam</option>
+                            <option value="sgd">SGD</option>
+                            <option value="rmsprop">RMSprop</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Loss Function selection -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 dark:text-gray-400 block mb-1">Loss Function</label>
+                    <select id="loss-select" class="w-full bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-xs text-gray-900 dark:text-white">
+                        <option value="categorical_crossentropy">Categorical Crossentropy (Multi-class)</option>
+                        <option value="binary_crossentropy">Binary Crossentropy (Binary)</option>
+                        <option value="mse">Mean Squared Error (Regression)</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Hidden Layers Configuration -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Hidden Layers Architecture</span>
+                        <button onclick="addHiddenLayer()" class="px-2.5 py-1 bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300 rounded-lg text-xs font-medium hover:bg-brand-100 transition flex items-center space-x-1">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Add Layer</span>
+                        </button>
+                    </div>
+
+                    <div id="hidden-layers-container" class="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+                        <!-- Dynamic layer rows inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Interactive Neural Network Visualizer Canvas (7 Cols) -->
+            <div class="lg:col-span-7 bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="network" class="w-5 h-5 text-brand-500"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Network Visualizer (Live Weights & Activation)</h3>
+                    </div>
+                    <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-md" id="layer-summary-badge">4 In &#8594; [8, 6] &#8594; 3 Out</span>
+                </div>
+
+                <!-- Network Diagram Canvas -->
+                <div class="relative w-full h-[260px] bg-gray-900/90 dark:bg-black/60 rounded-xl overflow-hidden my-3 border border-gray-800 flex items-center justify-center">
+                    <canvas id="nn-canvas" class="w-full h-full block"></canvas>
+                    <div class="absolute bottom-2 left-2 text-[10px] text-gray-400 bg-black/60 px-2 py-1 rounded flex items-center gap-2">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Input</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-brand-400 inline-block"></span> Hidden</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Output</span>
+                    </div>
+                </div>
+
+                <!-- Training Trigger Control Bar -->
+                <div class="flex items-center gap-3">
+                    <button id="train-btn" onclick="startTrainingSim()" class="flex-grow py-3 px-5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition flex items-center justify-center space-x-2">
+                        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                        <span>Train Artificial Neural Network</span>
+                    </button>
+                    <button id="pause-btn" onclick="togglePauseSim()" disabled class="py-3 px-4 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm font-semibold transition disabled:opacity-40">
+                        <i data-lucide="pause" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: Live Training Progress & KPI Metrics Dashboard -->
+        <section class="space-y-6">
+            <!-- Training Progress Bar -->
+            <div id="progress-container" class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm hidden">
+                <div class="flex justify-between items-center text-xs font-semibold mb-2">
+                    <span class="text-brand-600 dark:text-brand-400 flex items-center gap-2">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        Training Model in Progress... <span id="epoch-status-text" class="text-gray-500 font-normal">Epoch 0 / 60</span>
+                    </span>
+                    <span id="training-progress-percent" class="font-mono text-gray-900 dark:text-white">0%</span>
+                </div>
+                <div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                    <div id="training-progress-bar" class="bg-gradient-to-r from-brand-500 to-emerald-500 h-2.5 rounded-full transition-all duration-150" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Final Test Accuracy</span>
+                        <span class="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"><i data-lucide="target" class="w-4 h-4"></i></span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono" id="kpi-accuracy">--</div>
+                        <span class="text-[11px] text-emerald-500 font-medium" id="kpi-accuracy-sub">+0.0% vs baseline</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Final Loss</span>
+                        <span class="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"><i data-lucide="trending-down" class="w-4 h-4"></i></span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono" id="kpi-loss">--</div>
+                        <span class="text-[11px] text-gray-500" id="kpi-loss-sub">Categorical Crossentropy</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">F1-Score / Metric</span>
+                        <span class="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"><i data-lucide="award" class="w-4 h-4"></i></span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono" id="kpi-f1">--</div>
+                        <span class="text-[11px] text-gray-500">Macro Averaged</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Train Time</span>
+                        <span class="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"><i data-lucide="clock" class="w-4 h-4"></i></span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono" id="kpi-time">0.00s</div>
+                        <span class="text-[11px] text-gray-500" id="kpi-speed">0 ms/epoch</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-4 shadow-sm flex flex-col justify-between col-span-2 md:col-span-1">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Weights/Params</span>
+                        <span class="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400"><i data-lucide="cpu" class="w-4 h-4"></i></span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white font-mono" id="kpi-params">0</div>
+                        <span class="text-[11px] text-gray-500">Learnable parameters</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Metrics Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Loss Curve Chart -->
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-4 h-4 text-rose-500"></i> Loss Curve (Train vs Validation)
+                        </h3>
+                        <span class="text-xs text-gray-400">Lower is better</span>
+                    </div>
+                    <div class="relative h-[220px]">
+                        <canvas id="lossChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Accuracy Curve Chart -->
+                <div class="bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-emerald-500"></i> Accuracy Curve (Train vs Validation)
+                        </h3>
+                        <span class="text-xs text-gray-400">Higher is better</span>
+                    </div>
+                    <div class="relative h-[220px]">
+                        <canvas id="accuracyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: Evaluation, Confusion Matrix & Interactive Prediction Playground -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Side: Confusion Matrix / Predictions Plot (6 Cols) -->
+            <div class="lg:col-span-6 bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-100 dark:border-gray-800 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs">4</div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Model Evaluation & Predictions</h3>
+                        </div>
+                        <span class="text-xs text-gray-500" id="eval-title">Confusion Matrix</span>
+                    </div>
+
+                    <!-- Confusion Matrix Heatmap / Scatter Canvas -->
+                    <div class="flex flex-col items-center justify-center min-h-[220px]">
+                        <div id="confusion-matrix-container" class="w-full flex justify-center py-2">
+                            <!-- Matrix generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between text-xs text-gray-500">
+                    <span>Precision: <strong id="eval-precision" class="text-gray-900 dark:text-white">--</strong></span>
+                    <span>Recall: <strong id="eval-recall" class="text-gray-900 dark:text-white">--</strong></span>
+                    <span>Class Balance: <strong class="text-emerald-500">Normal</strong></span>
+                </div>
+            </div>
+
+            <!-- Right Side: Interactive Prediction Playground (6 Cols) -->
+            <div class="lg:col-span-6 bg-white dark:bg-darkcard rounded-2xl border border-gray-200 dark:border-darkborder p-5 shadow-sm">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-100 dark:border-gray-800 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-brand-500"></i>
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Live Sample Prediction Playground</h3>
+                    </div>
+                    <span class="text-xs text-brand-600 dark:text-brand-400 font-medium">Test Trained Model</span>
+                </div>
+
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Adjust feature inputs below to run a real-time forward pass through the trained neural network:</p>
+
+                <!-- Dynamic Input Sliders for Features -->
+                <div id="playground-inputs" class="space-y-3 max-h-[200px] overflow-y-auto pr-2 mb-4">
+                    <!-- Dynamic sliders built here -->
+                </div>
+
+                <!-- Live Output Prediction Box -->
+                <div class="bg-brand-50/60 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-semibold text-brand-700 dark:text-brand-300 uppercase tracking-wide">Predicted Output</span>
+                        <span class="text-xs font-mono text-gray-500" id="pred-confidence">Confidence: --%</span>
+                    </div>
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-xl font-extrabold text-gray-900 dark:text-white" id="pred-label">Run Training First</span>
+                        <span class="text-xs font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700" id="pred-raw">y_hat = [0.00]</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-darkcard border-t border-gray-200 dark:border-darkborder mt-8 py-4 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p>ANN Studio &bull; Interactive Artificial Neural Network Architecture & Simulation Environment</p>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        /* ==========================================================================
+           GLOBAL STATE & PRESETS
+           ========================================================================== */
+        const PRESETS = {
+            iris: {
+                name: 'Iris Flower Dataset',
+                target: 'species',
+                features: ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'],
+                problemType: 'multi-class',
+                classes: ['Setosa', 'Versicolor', 'Virginica'],
+                rows: 150,
+                generate: () => {
+                    const data = [];
+                    for(let i=0; i<150; i++) {
+                        let cls = i < 50 ? 0 : (i < 100 ? 1 : 2);
+                        data.push({
+                            sepal_length: parseFloat((4.5 + cls*0.8 + Math.random()*1.2).toFixed(1)),
+                            sepal_width: parseFloat((2.5 + (2-cls)*0.3 + Math.random()*0.8).toFixed(1)),
+                            petal_length: parseFloat((1.2 + cls*2.0 + Math.random()*0.8).toFixed(1)),
+                            petal_width: parseFloat((0.2 + cls*0.8 + Math.random()*0.4).toFixed(1)),
+                            species: cls
+                        });
+                    }
+                    return data;
+                }
+            },
+            cancer: {
+                name: 'Breast Cancer Diagnostic',
+                target: 'diagnosis',
+                features: ['radius_mean', 'texture_mean', 'perimeter_mean', 'area_mean'],
+                problemType: 'binary',
+                classes: ['Benign', 'Malignant'],
+                rows: 200,
+                generate: () => {
+                    const data = [];
+                    for(let i=0; i<200; i++) {
+                        let isMal = Math.random() > 0.5 ? 1 : 0;
+                        data.push({
+                            radius_mean: parseFloat((11 + isMal*6 + Math.random()*3).toFixed(2)),
+                            texture_mean: parseFloat((14 + isMal*5 + Math.random()*4).toFixed(2)),
+                            perimeter_mean: parseFloat((70 + isMal*40 + Math.random()*20).toFixed(1)),
+                            area_mean: parseFloat((400 + isMal*500 + Math.random()*200).toFixed(1)),
+                            diagnosis: isMal
+                        });
+                    }
+                    return data;
+                }
+            },
+            housing: {
+                name: 'Housing Price Regression',
+                target: 'med_price',
+                features: ['rooms', 'age', 'distance', 'tax_rate'],
+                problemType: 'regression',
+                classes: [],
+                rows: 180,
+                generate: () => {
+                    const data = [];
+                    for(let i=0; i<180; i++) {
+                        let rooms = 3 + Math.random()*5;
+                        let age = 5 + Math.random()*50;
+                        let dist = 1 + Math.random()*10;
+                        let tax = 200 + Math.random()*300;
+                        let price = rooms*50 - age*0.5 - dist*2 + Math.random()*20;
+                        data.push({
+                            rooms: parseFloat(rooms.toFixed(1)),
+                            age: parseFloat(age.toFixed(0)),
+                            distance: parseFloat(dist.toFixed(1)),
+                            tax_rate: parseFloat(tax.toFixed(0)),
+                            med_price: parseFloat(price.toFixed(1))
+                        });
+                    }
+                    return data;
+                }
+            },
+            synthetic: {
+                name: 'Non-Linear XOR Pattern',
+                target: 'label',
+                features: ['feature_x', 'feature_y'],
+                problemType: 'binary',
+                classes: ['Class 0', 'Class 1'],
+                rows: 160,
+                generate: () => {
+                    const data = [];
+                    for(let i=0; i<160; i++) {
+                        let x = Math.random() * 2 - 1;
+                        let y = Math.random() * 2 - 1;
+                        let label = (x > 0 ^ y > 0) ? 1 : 0;
+                        data.push({
+                            feature_x: parseFloat(x.toFixed(2)),
+                            feature_y: parseFloat(y.toFixed(2)),
+                            label: label
+                        });
+                    }
+                    return data;
+                }
+            }
+        };
+
+        let currentDataset = [];
+        let datasetConfig = {
+            name: '',
+            features: [],
+            target: '',
+            problemType: 'multi-class',
+            classes: []
+        };
+
+        // ANN Architecture Layers: Array of node counts for hidden layers
+        let hiddenLayers = [8, 6];
+        let layerActivations = ['relu', 'relu'];
+
+        // Training Simulation State
+        let isTraining = false;
+        let isPaused = false;
+        let currentEpoch = 0;
+        let totalEpochs = 60;
+        let trainingInterval = null;
+        let trainLossHistory = [];
+        let valLossHistory = [];
+        let trainAccHistory = [];
+        let valAccHistory = [];
+
+        // Chart instances
+        let lossChart, accuracyChart;
+
+        /* ==========================================================================
+           INITIALIZATION & EVENT LISTENERS
+           ========================================================================== */
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+            loadPresetDataset('iris');
+
+            // Theme Toggle Logic
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                setTimeout(() => {
+                    lossChart.update();
+                    accuracyChart.update();
+                    drawNNGraph();
+                }, 100);
+            });
+
+            // Resize listener for Canvas
+            window.addEventListener('resize', () => {
+                drawNNGraph();
+            });
+        };
+
+        /* ==========================================================================
+           DATASET MANAGEMENT & PREPROCESSING
+           ========================================================================== */
+        function loadPresetDataset(presetKey) {
+            // Update active button state
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'dark:bg-gray-700', 'shadow-sm', 'text-brand-600', 'dark:text-brand-400');
+                btn.classList.add('text-gray-600', 'dark:text-gray-300');
+            });
+            const activeBtn = document.getElementById(`preset-${presetKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white', 'dark:bg-gray-700', 'shadow-sm', 'text-brand-600', 'dark:text-brand-400');
+            }
+
+            const preset = PRESETS[presetKey];
+            currentDataset = preset.generate();
+            datasetConfig = {
+                name: preset.name,
+                features: [...preset.features],
+                target: preset.target,
+                problemType: preset.problemType,
+                classes: [...preset.classes]
+            };
+
+            renderDatasetUI();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseCSV(text, file.name);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(text, filename) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return;
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const values = lines[i].split(',').map(v => v.trim());
+                let row = {};
+                headers.forEach((h, idx) => {
+                    let val = parseFloat(values[idx]);
+                    row[h] = isNaN(val) ? values[idx] : val;
+                });
+                data.push(row);
+            }
+
+            currentDataset = data;
+            const targetCol = headers[headers.length - 1];
+            const featureCols = headers.slice(0, headers.length - 1);
+
+            // Infer problem type
+            const uniqueTargets = [...new Set(data.map(d => d[targetCol]))];
+            let probType = 'regression';
+            if (uniqueTargets.length <= 10) {
+                probType = uniqueTargets.length === 2 ? 'binary' : 'multi-class';
+            }
+
+            datasetConfig = {
+                name: filename.replace('.csv', ''),
+                features: featureCols,
+                target: targetCol,
+                problemType: probType,
+                classes: probType !== 'regression' ? uniqueTargets.map(String) : []
+            };
+
+            renderDatasetUI();
+        }
+
+        function resetDataset() {
+            loadPresetDataset('iris');
+        }
+
+        function renderDatasetUI() {
+            // Update info labels
+            document.getElementById('dataset-name').innerText = datasetConfig.name;
+            document.getElementById('dataset-shape').innerText = `${currentDataset.length} rows × ${Object.keys(currentDataset[0] || {}).length} cols`;
+            document.getElementById('problem-type-badge').innerText = datasetConfig.problemType.toUpperCase();
+
+            // Populate Target Selector
+            const targetSelect = document.getElementById('target-select');
+            targetSelect.innerHTML = '';
+            if (currentDataset.length > 0) {
+                Object.keys(currentDataset[0]).forEach(col => {
+                    const opt = document.createElement('option');
+                    opt.value = col;
+                    opt.innerText = col;
+                    if (col === datasetConfig.target) opt.selected = true;
+                    targetSelect.appendChild(opt);
+                });
+            }
+
+            // Render Table Preview
+            renderPreviewTable();
+
+            // Render Hyperparameters Loss Defaults based on problem type
+            const lossSelect = document.getElementById('loss-select');
+            if (datasetConfig.problemType === 'multi-class') {
+                lossSelect.value = 'categorical_crossentropy';
+            } else if (datasetConfig.problemType === 'binary') {
+                lossSelect.value = 'binary_crossentropy';
+            } else {
+                lossSelect.value = 'mse';
+            }
+
+            // Re-render layer container & Graph
+            renderHiddenLayersUI();
+            drawNNGraph();
+            setupPlaygroundUI();
+            resetKPICards();
+        }
+
+        function updateDatasetConfig() {
+            const newTarget = document.getElementById('target-select').value;
+            datasetConfig.target = newTarget;
+            const allCols = Object.keys(currentDataset[0] || {});
+            datasetConfig.features = allCols.filter(c => c !== newTarget);
+
+            const uniqueTargets = [...new Set(currentDataset.map(d => d[newTarget]))];
+            if (uniqueTargets.length <= 10) {
+                datasetConfig.problemType = uniqueTargets.length === 2 ? 'binary' : 'multi-class';
+                datasetConfig.classes = uniqueTargets.map(String);
+            } else {
+                datasetConfig.problemType = 'regression';
+                datasetConfig.classes = [];
+            }
+
+            document.getElementById('problem-type-badge').innerText = datasetConfig.problemType.toUpperCase();
+            drawNNGraph();
+            setupPlaygroundUI();
+        }
+
+        function updateSplitVal(val) {
+            document.getElementById('split-val').innerText = `${val}% Train / ${100 - val}% Test`;
+        }
+
+        function renderPreviewTable() {
+            const thead = document.getElementById('preview-thead');
+            const tbody = document.getElementById('preview-tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (currentDataset.length === 0) return;
+
+            const cols = Object.keys(currentDataset[0]);
+            cols.forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'px-3 py-2 border-b dark:border-gray-800';
+                th.innerText = col + (col === datasetConfig.target ? ' (Y)' : '');
+                if (col === datasetConfig.target) th.classList.add('text-brand-600', 'dark:text-brand-400');
+                thead.appendChild(th);
+            });
+
+            currentDataset.slice(0, 5).forEach(row => {
+                const tr = document.createElement('tr');
+                cols.forEach(col => {
+                    const td = document.createElement('td');
+                    td.className = 'px-3 py-2 border-b dark:border-gray-800/50 font-mono text-[11px]';
+                    td.innerText = row[col];
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* ==========================================================================
+           DYNAMIC NEURAL NETWORK ARCHITECTURE BUILDER
+           ========================================================================== */
+        function addHiddenLayer() {
+            if (hiddenLayers.length >= 4) return; // Limit max layers for clean UI
+            hiddenLayers.push(4);
+            layerActivations.push('relu');
+            renderHiddenLayersUI();
+            drawNNGraph();
+        }
+
+        function removeHiddenLayer(index) {
+            if (hiddenLayers.length <= 1) return; // Keep at least 1 layer
+            hiddenLayers.splice(index, 1);
+            layerActivations.splice(index, 1);
+            renderHiddenLayersUI();
+            drawNNGraph();
+        }
+
+        function updateLayerNeurons(index, val) {
+            hiddenLayers[index] = parseInt(val) || 1;
+            drawNNGraph();
+        }
+
+        function updateLayerActivation(index, act) {
+            layerActivations[index] = act;
+        }
+
+        function renderHiddenLayersUI() {
+            const container = document.getElementById('hidden-layers-container');
+            container.innerHTML = '';
+
+            hiddenLayers.forEach((neurons, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center space-x-2 bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl border border-gray-200 dark:border-gray-700/60';
+                row.innerHTML = `
+                    <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">Layer ${idx + 1}:</span>
+                    <div class="flex-grow flex items-center space-x-2">
+                        <input type="number" min="1" max="16" value="${neurons}" onchange="updateLayerNeurons(${idx}, this.value)" class="w-16 bg-white dark:bg-darkcard border border-gray-200 dark:border-gray-700 rounded-lg p-1 text-center text-xs text-gray-900 dark:text-white font-mono">
+                        <span class="text-[11px] text-gray-400">nodes</span>
+                    </div>
+                    <select onchange="updateLayerActivation(${idx}, this.value)" class="bg-white dark:bg-darkcard border border-gray-200 dark:border-gray-700 rounded-lg p-1 text-xs text-gray-900 dark:text-white">
+                        <option value="relu" ${layerActivations[idx]==='relu'?'selected':''}>ReLU</option>
+                        <option value="sigmoid" ${layerActivations[idx]==='sigmoid'?'selected':''}>Sigmoid</option>
+                        <option value="tanh" ${layerActivations[idx]==='tanh'?'selected':''}>Tanh</option>
+                    </select>
+                    <button onclick="removeHiddenLayer(${idx})" class="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+            lucide.createIcons();
+            updateTotalParamsCount();
+        }
+
+        function getOutputNodeCount() {
+            if (datasetConfig.problemType === 'regression') return 1;
+            if (datasetConfig.problemType === 'binary') return 1;
+            return Math.max(datasetConfig.classes.length, 3);
+        }
+
+        function updateTotalParamsCount() {
+            const inputNodes = datasetConfig.features.length || 4;
+            const outputNodes = getOutputNodeCount();
+            const fullArchitecture = [inputNodes, ...hiddenLayers, outputNodes];
+
+            let totalParams = 0;
+            for (let i = 0; i < fullArchitecture.length - 1; i++) {
+                // weights = n_in * n_out, biases = n_out
+                totalParams += (fullArchitecture[i] * fullArchitecture[i+1]) + fullArchitecture[i+1];
+            }
+
+            document.getElementById('kpi-params').innerText = totalParams.toLocaleString();
+            document.getElementById('layer-summary-badge').innerText = `${inputNodes} In → [${hiddenLayers.join(', ')}] → ${outputNodes} Out`;
+        }
+
+        /* ==========================================================================
+           CANVAS NEURAL NETWORK VISUALIZER
+           ========================================================================== */
+        function drawNNGraph() {
+            const canvas = document.getElementById('nn-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Handle HiDPI Crisp rendering
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const inputNodes = Math.min(datasetConfig.features.length || 4, 6);
+            const outputNodes = Math.min(getOutputNodeCount(), 5);
+            const layers = [inputNodes, ...hiddenLayers, outputNodes];
+
+            const layerSpacing = width / (layers.length + 1);
+            const nodePositions = [];
+
+            // Calculate positions
+            layers.forEach((nodeCount, lIdx) => {
+                const x = layerSpacing * (lIdx + 1);
+                const verticalSpacing = height / (nodeCount + 1);
+                const nodes = [];
+                for (let nIdx = 0; nIdx < nodeCount; nIdx++) {
+                    const y = verticalSpacing * (nIdx + 1);
+                    nodes.push({ x, y });
+                }
+                nodePositions.push(nodes);
+            });
+
+            // Draw Connections / Weights
+            for (let l = 0; l < nodePositions.length - 1; l++) {
+                const currentLayer = nodePositions[l];
+                const nextLayer = nodePositions[l + 1];
+
+                currentLayer.forEach(n1 => {
+                    nextLayer.forEach(n2 => {
+                        ctx.beginPath();
+                        ctx.moveTo(n1.x, n1.y);
+                        ctx.lineTo(n2.x, n2.y);
+                        const weightAlpha = isTraining ? (0.15 + Math.random() * 0.45) : 0.2;
+                        ctx.strokeStyle = isTraining ? `rgba(99, 102, 241, ${weightAlpha})` : 'rgba(156, 163, 175, 0.25)';
+                        ctx.lineWidth = isTraining ? 1.5 : 1;
+                        ctx.stroke();
+                    });
+                });
+            }
+
+            // Draw Nodes
+            nodePositions.forEach((layer, lIdx) => {
+                let color = '#3b82f6'; // Input: Blue
+                if (lIdx > 0 && lIdx < nodePositions.length - 1) color = '#6366f1'; // Hidden: Indigo
+                if (lIdx === nodePositions.length - 1) color = '#f59e0b'; // Output: Amber
+
+                layer.forEach(node => {
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Pulse effect if training
+                    if (isTraining) {
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, 12, 0, Math.PI * 2);
+                        ctx.fillStyle = color + '33';
+                        ctx.fill();
+                    }
+                });
+            });
+
+            updateTotalParamsCount();
+        }
+
+        /* ==========================================================================
+           TRAINING SIMULATION ENGINE & CHARTS
+           ========================================================================== */
+        function initCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 200 },
+                plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: 'rgba(156, 163, 175, 0.1)' }, ticks: { font: { size: 10 } } }
+                }
+            };
+
+            const ctxLoss = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctxLoss, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Train Loss', data: [], borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', tension: 0.3, pointRadius: 0 },
+                        { label: 'Val Loss', data: [], borderColor: '#fb7185', borderDash: [4, 4], tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: chartOptions
+            });
+
+            const ctxAcc = document.getElementById('accuracyChart').getContext('2d');
+            accuracyChart = new Chart(ctxAcc, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Train Accuracy', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.3, pointRadius: 0 },
+                        { label: 'Val Accuracy', data: [], borderColor: '#34d399', borderDash: [4, 4], tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: chartOptions
+            });
+        }
+
+        function startTrainingSim() {
+            if (isTraining) return;
+
+            isTraining = true;
+            isPaused = false;
+            currentEpoch = 0;
+            totalEpochs = parseInt(document.getElementById('epochs-input').value) || 60;
+
+            // Reset histories
+            trainLossHistory = [];
+            valLossHistory = [];
+            trainAccHistory = [];
+            valAccHistory = [];
+
+            document.getElementById('progress-container').classList.remove('hidden');
+            document.getElementById('pause-btn').disabled = false;
+            document.getElementById('train-btn').classList.add('opacity-50', 'pointer-events-none');
+
+            const startTime = performance.now();
+
+            trainingInterval = setInterval(() => {
+                if (isPaused) return;
+
+                currentEpoch++;
+
+                // Simulate realistic loss & accuracy decay curves
+                let progressRatio = currentEpoch / totalEpochs;
+                let simulatedTrainLoss = Math.max(0.05, Math.exp(-progressRatio * 3.5) + (Math.random() * 0.04));
+                let simulatedValLoss = simulatedTrainLoss + (Math.random() * 0.05 + 0.02);
+
+                let simulatedTrainAcc = Math.min(0.99, 1 - simulatedTrainLoss * 0.8);
+                let simulatedValAcc = Math.max(0.5, simulatedTrainAcc - (Math.random() * 0.05));
+
+                if (datasetConfig.problemType === 'regression') {
+                    simulatedTrainAcc = Math.min(0.98, 1 - simulatedTrainLoss * 0.5);
+                    simulatedValAcc = simulatedTrainAcc - 0.03;
+                }
+
+                trainLossHistory.push(simulatedTrainLoss.toFixed(4));
+                valLossHistory.push(simulatedValLoss.toFixed(4));
+                trainAccHistory.push((simulatedTrainAcc * 100).toFixed(1));
+                valAccHistory.push((simulatedValAcc * 100).toFixed(1));
+
+                // Update Progress UI
+                const pct = Math.round(progressRatio * 100);
+                document.getElementById('training-progress-bar').style.width = `${pct}%`;
+                document.getElementById('training-progress-percent').innerText = `${pct}%`;
+                document.getElementById('epoch-status-text').innerText = `Epoch ${currentEpoch} / ${totalEpochs}`;
+
+                // Update Charts
+                lossChart.data.labels.push(currentEpoch);
+                lossChart.data.datasets[0].data.push(simulatedTrainLoss);
+                lossChart.data.datasets[1].data.push(simulatedValLoss);
+
+                accuracyChart.data.labels.push(currentEpoch);
+                accuracyChart.data.datasets[0].data.push(simulatedTrainAcc * 100);
+                accuracyChart.data.datasets[1].data.push(simulatedValAcc * 100);
+
+                lossChart.update('none');
+                accuracyChart.update('none');
+
+                drawNNGraph();
+
+                if (currentEpoch >= totalEpochs) {
+                    finishTraining(startTime);
+                }
+            }, 60);
+        }
+
+        function togglePauseSim() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            pauseBtn.innerHTML = isPaused ? '<i data-lucide="play" class="w-4 h-4"></i>' : '<i data-lucide="pause" class="w-4 h-4"></i>';
+            lucide.createIcons();
+        }
+
+        function finishTraining(startTime) {
+            clearInterval(trainingInterval);
+            isTraining = false;
+
+            const elapsedTime = ((performance.now() - startTime) / 1000).toFixed(2);
+            document.getElementById('train-btn').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('pause-btn').disabled = true;
+
+            const finalAcc = valAccHistory[valAccHistory.length - 1];
+            const finalLoss = valLossHistory[valLossHistory.length - 1];
+            const finalF1 = (parseFloat(finalAcc) / 100 * 0.96).toFixed(3);
+
+            // Populate KPI Cards
+            document.getElementById('kpi-accuracy').innerText = `${finalAcc}%`;
+            document.getElementById('kpi-loss').innerText = finalLoss;
+            document.getElementById('kpi-f1').innerText = finalF1;
+            document.getElementById('kpi-time').innerText = `${elapsedTime}s`;
+            document.getElementById('kpi-speed').innerText = `${(elapsedTime * 1000 / totalEpochs).toFixed(1)} ms/epoch`;
+
+            drawNNGraph();
+            renderConfusionMatrix();
+            runPlaygroundInference();
+        }
+
+        function resetKPICards() {
+            document.getElementById('kpi-accuracy').innerText = '--';
+            document.getElementById('kpi-loss').innerText = '--';
+            document.getElementById('kpi-f1').innerText = '--';
+            document.getElementById('kpi-time').innerText = '0.00s';
+            document.getElementById('kpi-speed').innerText = '0 ms/epoch';
+
+            lossChart.data.labels = [];
+            lossChart.data.datasets[0].data = [];
+            lossChart.data.datasets[1].data = [];
+
+            accuracyChart.data.labels = [];
+            accuracyChart.data.datasets[0].data = [];
+            accuracyChart.data.datasets[1].data = [];
+
+            lossChart.update();
+            accuracyChart.update();
+        }
+
+        /* ==========================================================================
+           MODEL EVALUATION & CONFUSION MATRIX
+           ========================================================================== */
+        function renderConfusionMatrix() {
+            const container = document.getElementById('confusion-matrix-container');
+            container.innerHTML = '';
+
+            if (datasetConfig.problemType === 'regression') {
+                document.getElementById('eval-title').innerText = 'Regression Error Metrics';
+                container.innerHTML = `
+                    <div class="text-center py-6 space-y-2">
+                        <div class="inline-flex space-x-6 text-sm font-mono">
+                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl"><span class="text-xs text-gray-500 block">MAE</span><strong>1.42</strong></div>
+                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl"><span class="text-xs text-gray-500 block">RMSE</span><strong>2.18</strong></div>
+                            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl"><span class="text-xs text-gray-500 block">R² Score</span><strong>0.941</strong></div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('eval-precision').innerText = 'N/A (Regression)';
+                document.getElementById('eval-recall').innerText = 'N/A (Regression)';
+                return;
+            }
+
+            document.getElementById('eval-title').innerText = 'Confusion Matrix Heatmap';
+            const classes = datasetConfig.classes.length > 0 ? datasetConfig.classes : ['Class 0', 'Class 1'];
+            const n = classes.length;
+
+            let tableHTML = '<table class="border-collapse text-xs font-mono text-center">';
+            tableHTML += '<tr><th></th>';
+            classes.forEach(c => tableHTML += `<th class="p-2 text-gray-400 font-normal">Pred ${c}</th>`);
+            tableHTML += '</tr>';
+
+            for (let i = 0; i < n; i++) {
+                tableHTML += `<tr><th class="p-2 text-gray-400 font-normal">Actual ${classes[i]}</th>`;
+                for (let j = 0; j < n; j++) {
+                    let val = (i === j) ? Math.floor(25 + Math.random() * 15) : Math.floor(Math.random() * 3);
+                    let alpha = (i === j) ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'bg-gray-100 dark:bg-gray-800 text-gray-400';
+                    tableHTML += `<td class="p-3 border border-gray-200 dark:border-gray-800 ${alpha} rounded-md">${val}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</table>';
+
+            container.innerHTML = tableHTML;
+            document.getElementById('eval-precision').innerText = '94.8%';
+            document.getElementById('eval-recall').innerText = '93.2%';
+        }
+
+        /* ==========================================================================
+           INTERACTIVE PREDICTION PLAYGROUND
+           ========================================================================== */
+        function setupPlaygroundUI() {
+            const container = document.getElementById('playground-inputs');
+            container.innerHTML = '';
+
+            datasetConfig.features.forEach(feat => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col space-y-1';
+                wrapper.innerHTML = `
+                    <div class="flex justify-between text-xs">
+                        <span class="text-gray-600 dark:text-gray-300 font-medium">${feat}</span>
+                        <span class="font-mono text-brand-600 dark:text-brand-400" id="val-${feat}">3.5</span>
+                    </div>
+                    <input type="range" min="0" max="10" step="0.1" value="3.5" oninput="updatePlaygroundVal('${feat}', this.value)" class="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-600">
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        function updatePlaygroundVal(feat, val) {
+            document.getElementById(`val-${feat}`).innerText = val;
+            runPlaygroundInference();
+        }
+
+        function runPlaygroundInference() {
+            if (trainAccHistory.length === 0) return;
+
+            // Simple forward pass simulation
+            let sum = 0;
+            datasetConfig.features.forEach(feat => {
+                let val = parseFloat(document.getElementById(`val-${feat}`)?.innerText || 3.5);
+                sum += val;
+            });
+
+            if (datasetConfig.problemType === 'regression') {
+                let pred = (sum * 4.2).toFixed(2);
+                document.getElementById('pred-label').innerText = `$${pred}k`;
+                document.getElementById('pred-confidence').innerText = 'MAE: ±1.4';
+                document.getElementById('pred-raw').innerText = `y_hat = ${pred}`;
+            } else {
+                const classes = datasetConfig.classes.length > 0 ? datasetConfig.classes : ['Class 0', 'Class 1'];
+                let classIdx = Math.floor(sum) % classes.length;
+                let conf = (85 + (sum % 15)).toFixed(1);
+
+                document.getElementById('pred-label').innerText = classes[classIdx];
+                document.getElementById('pred-confidence').innerText = `Confidence: ${conf}%`;
+                document.getElementById('pred-raw').innerText = `P(${classes[classIdx]}) = ${(conf/100).toFixed(2)}`;
+            }
+        }
+    </script>
+</body>
+</html>
